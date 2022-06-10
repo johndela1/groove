@@ -1,0 +1,104 @@
+<script>
+  function beep2(hz) {
+      var cx = new AudioContext()
+      var o = cx.createOscillator()
+      o.type = "sine"
+      o.frequency.setValueAtTime(hz, cx.currentTime);
+      o.connect(cx.destination)
+      o.start(cx.currentTime);
+      o.stop(cx.currentTime+.001);
+  }
+
+  function deltas(song, int_ms) {
+     var  x=1;
+      var dts = [];
+      for (b=1; b<song.length; b++) {
+          if (song[b]!=0) {
+              dts.push(int_ms * x);
+              x=1;
+	  } else {
+              x+=1;
+	  }
+      }
+      return dts
+  }
+
+  function deltas2(song, int_ms) {
+      var dts = [];
+      for (b=1; b<song.length; b++) {
+          if (song[b]!=0) {
+              dts.push(int_ms * b);
+	  }
+      }
+      return dts
+  }
+
+  i=0;
+  function beat() {
+      if (song[i++] != 0)  beep2(200);
+  }
+
+  p = null;
+  j = 0;
+  errors = [];
+  errors2 = [];
+  st = null;
+  is_first = true;
+  function note() {
+      if (is_first) {
+	  st = Date.now();
+	  setTimeout(() => {
+	      console.log('post errors', song, bpm, errors, errors2)
+	      // let xhr = new XMLHttpRequest();
+	      // xhr.open("POST", "http://localhost:8000");
+	      // xhr.send();
+	  }, interval_ms * song.length);
+	  is_first = false;
+
+      }
+      now = Date.now()
+      if (p==null) {
+	  p = now;
+	  return;
+	}
+      dt = now - p - dts[j];
+      dt2 = now - st - dts2[j];
+      j++;
+      errors.push(dt);
+      errors2.push(dt2);
+      p = now;
+  }
+
+  function start() {
+      for (let b = 0; b< song.length; b++) {
+	  setTimeout(() => {
+	      beat();
+	  }, interval_ms * b)
+      }
+  }
+
+  song = [1,1,0,1];
+  //song = Array(1).fill([1,1,0,1,1,0,1,0]).flat();
+  // song = [1,0,     1,0, 0,0 ,1,0      ,1,0, 0,1, 1,0];
+  //song = [1,0, 0,0, 0,0,   1,0, 0,1, 1,0];
+
+  bpm = 120;
+  const SECS_IN_MIN = 60;
+  interval_ms = SECS_IN_MIN*1000/bpm;
+  //secsPerBeat = SECS_IN_MIN / bpm
+  dts = deltas(song, interval_ms);
+  dts2 = deltas2(song, interval_ms);
+  document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+      case 'n':
+	  location.reload();
+	  break;
+      case ' ':
+	  note();
+	  break;
+      case 'x':
+	  start();
+	  break;
+      }
+  });
+</script>
