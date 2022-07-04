@@ -1,5 +1,6 @@
 <script>
-  function beep2(hz) {
+  function beep() {
+      var hz = 200;
       var cx = new AudioContext()
       var o = cx.createOscillator()
       o.type = "sine"
@@ -9,85 +10,74 @@
       o.stop(cx.currentTime+.001);
   }
 
-  function deltas(song, int_ms) {
-     var  x=1;
+  function deltas(song, msPerBeat) {
+     var  beatsSinceNote=1;
       var dts = [];
       for (b=1; b<song.length; b++) {
-          if (song[b]!=0) {
-              dts.push(int_ms * x);
-              x=1;
+          //reverse  remove !
+          if (song[b]==0) {
+              beatsSinceNote+=1;
 	  } else {
-              x+=1;
+              dts.push(msPerBeat * beatsSinceNote);
+              beatsSinceNote=1;
 	  }
       }
       return dts
   }
 
-  function deltas2(song, int_ms) {
-      var dts = [];
-      for (b=1; b<song.length; b++) {
-          if (song[b]!=0) {
-              dts.push(int_ms * b);
-	  }
-      }
-      return dts
-  }
-
-  i=0;
-  function beat() {
-      if (song[i++] != 0)  beep2(200);
-  }
-
-  p = null;
-  j = 0;
+  prev = null;
+  note_idx = 0;
   errors = [];
-  errors2 = [];
-  st = null;
   is_first = true;
+  const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length;
+
   function note() {
       if (is_first) {
 	  st = Date.now();
 	  setTimeout(() => {
-	      console.log('post errors', song, bpm, errors, errors2)
-	      // let xhr = new XMLHttpRequest();
-	      // xhr.open("POST", "http://localhost:8000");
-	      // xhr.send();
-	  }, interval_ms * song.length);
+	      let xhr = new XMLHttpRequest();
+	      avg = average(errors);
+	      if (avg > 0) {
+		  console.log("too slow", avg);
+	      } else {
+		  console.log("too fast", avg);
+	      }
+	      xhr.open("POST", "http://localhost:8000");
+	      xhr.setRequestHeader("Content-Type", "application/json");
+	      var payload = [song.join(''), bpm, errors].join('|');
+	      console.log(payload);
+	      xhr.send(payload)
+	  }, msPerBeat * song.length);
 	  is_first = false;
-
       }
       now = Date.now()
-      if (p==null) {
-	  p = now;
+      if (prev == null) {
+	  prev = now;
 	  return;
-	}
-      dt = now - p - dts[j];
-      dt2 = now - st - dts2[j];
-      j++;
-      errors.push(dt);
-      errors2.push(dt2);
-      p = now;
+      }
+      errors.push(now - prev - dts[note_idx++]);
+      prev = now;
   }
-
   function start() {
       for (let b = 0; b< song.length; b++) {
-	  setTimeout(() => {
-	      beat();
-	  }, interval_ms * b)
+	  if (song[b] != 0) {
+	      setTimeout(() => {
+		  beep();
+	      }, msPerBeat * b)
+	  }
       }
   }
 
   song = [1,1,0,1];
-  //song = Array(1).fill([1,1,0,1,1,0,1,0]).flat();
+  song = Array(1).fill([1,1,0,1,1,0,1,0]).flat();
+ // song = [1,0,1,0,1,1,0,1,0,1,1];
   // song = [1,0,     1,0, 0,0 ,1,0      ,1,0, 0,1, 1,0];
   //song = [1,0, 0,0, 0,0,   1,0, 0,1, 1,0];
 
-  bpm = 120;
+  bpm = 240
   const SECS_IN_MIN = 60;
-  interval_ms = SECS_IN_MIN*1000/bpm;
-  //secsPerBeat = SECS_IN_MIN / bpm
-  dts = deltas(song, interval_ms);
-  dts2 = deltas2(song, interval_ms);
+  msPerBeat = SECS_IN_MIN*1000/bpm;
+  dts = deltas(song, msPerBeat);
   document.addEventListener('keydown', (e) => {
       switch(e.key) {
       case 'n':
