@@ -23,7 +23,7 @@ func f(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
-	rec := strings.Split(string(b), "|")
+	rec := strings.Split(string(b), " ")
 	now := time.Now().UnixMilli()
 
 	song, bpm := rec[0], rec[1]
