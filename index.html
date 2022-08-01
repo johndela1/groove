@@ -18,8 +18,7 @@
       var  beatsSinceNote=1;
       var dts = [];
       for (b=1; b<song.length; b++) {
-          //reverse  remove !
-          if (song[b]==0) {
+          if (song[b] == "0") {
               beatsSinceNote+=1;
 	  } else {
               dts.push(msPerBeat * beatsSinceNote);
@@ -48,7 +47,7 @@
 	      }
 	      xhr.open("POST", "http://localhost:8000");
 	      xhr.setRequestHeader("Content-Type", "application/json");
-	      var payload = [song.join(''), bpm, errors].join(' ');
+	      var payload = [song, bpm, errors].join(' ');
 	      xhr.send(payload)
 
 	      let cx = document.querySelector("canvas").getContext("2d");
@@ -85,12 +84,11 @@
       }
   }
 
-  song = Array(3).fill([1,0,1,1,0,0,1,0]).flat();
- // song = Array(1).fill([1,1,0,1,1,0,1,0]).flat();
- // song = [1,0,1,0,1,1,0,1,0,1,1];
-  // song = [1,0,     1,0, 0,0 ,1,0      ,1,0, 0,1, 1,0];
-  //song = [1,0, 0,0, 0,0,   1,0, 0,1, 1,0];
-
+  song = "1010 1010"
+  // song = "11011010"; // honkey tonk woman intro
+  // song = "10   10 00 10   10 01 10"; // Greensleeves (begin)
+  // song = "10 00 00   10 01 10"; // Greensleeves (second part)
+  song = song.replace(/\s/g, '');
   bpm = 240
   const SECS_IN_MIN = 60;
   msPerBeat = SECS_IN_MIN*1000/bpm;
