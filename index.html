@@ -15,7 +15,7 @@
   }
 
   function deltas(song, msPerBeat) {
-     var  beatsSinceNote=1;
+      var  beatsSinceNote=1;
       var dts = [];
       for (b=1; b<song.length; b++) {
           //reverse  remove !
@@ -95,6 +95,7 @@
   const SECS_IN_MIN = 60;
   msPerBeat = SECS_IN_MIN*1000/bpm;
   dts = deltas(song, msPerBeat);
+
   document.addEventListener('keydown', (e) => {
       switch(e.key) {
       case 'n':
