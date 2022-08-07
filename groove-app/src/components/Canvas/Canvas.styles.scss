@@ -1,0 +1,33 @@
+#myCanvas {
+  border: solid 1px #c3c3c3;
+  margin: 10px;
+  margin-top: 5vh;
+}
+
+.accurate {
+  background: rgb(180, 210, 210);
+  animation: note-accurate 3s;
+}
+
+.inaccurate {
+  background: rgb(240, 200, 200);
+  animation: note-inaccurate 3s;
+}
+
+@keyframes note-accurate {
+  from {
+    background-color: white;
+  }
+  to {
+    background-color: rgb(180, 210, 210);
+  }
+}
+
+@keyframes note-inaccurate {
+  from {
+    background-color: white;
+  }
+  to {
+    background-color: rgb(240, 200, 200);
+  }
+}
