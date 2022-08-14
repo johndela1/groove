@@ -12,7 +12,7 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
 export default function Canvas({ songs, selectedSong, delay, setDelay }) {
-  const song = songs[selectedSong].beat.replace(/\s/g, "");
+  const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
 
