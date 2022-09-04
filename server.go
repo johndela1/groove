@@ -36,7 +36,7 @@ func f(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func songErrs(f *os.File, userID string) map[string]int {
+func SongErrs(f io.Reader, userID string) map[string]int {
 	scanner := bufio.NewScanner(f)
 	errs := make(map[string]int)
 	for scanner.Scan() {
@@ -54,11 +54,10 @@ func songErrs(f *os.File, userID string) map[string]int {
 	return errs
 }
 
-func worst(errs map[string]int) string {
+func Worst(errs map[string]int) string {
 	var max int
 	var worst string
 	for k, v := range errs {
-		fmt.Println("val", v)
 		if v > max {
 			max = v
 			worst = k
@@ -74,7 +73,7 @@ func next(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	fmt.Fprintf(w, "%s\n", worst(songErrs(file, "jj")))
+	fmt.Fprintf(w, "%s\n", Worst(SongErrs(file, "user_id")))
 
 }
 
