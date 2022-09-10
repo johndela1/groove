@@ -84,7 +84,15 @@
       }
   }
 
-  song = "1010 1010"
+  let claves = {
+    "son": "10 01 00 10 00 10 10 00",
+    "rumba": "10 01 00 01 00 10 10 00"
+  }
+  for (let i=0; i<2; i++) {
+       let mid = son.length >> 2;
+       let one = son[0:mid];
+       let two = son[mid:];
+  }
   // song = "11011010"; // honkey tonk woman intro
   // song = "10   10 00 10   10 01 10"; // Greensleeves (begin)
   // song = "10 00 00   10 01 10"; // Greensleeves (second part)
