@@ -1,2 +1,14 @@
 use run.sh to start server if you want to store results
 open index.html in browswer, press x to start, n to restart
+
+# Status
+App can play song, record results, and save them to a server.  The following are hard-coded:
+- which song
+- bpm
+
+# Next steps
+- choose worst song to play
+- choose sweetspot bpm (less than n% fails)
+- do experiment: assert that playing music slow is always easier than playing it fast
+
+Tolerance should be a function of bpm.
