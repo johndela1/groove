@@ -29,19 +29,22 @@ func f(w http.ResponseWriter, r *http.Request) {
 	rec := strings.Split(string(b), " ")
 	now := time.Now().UnixMilli()
 
-	song, bpm := rec[0], rec[1]
-	errors := strings.Split(rec[2], ",")
+	user_id, song, bpm := rec[1], rec[2]
+	errors := strings.Split(rec[3], ",")
 	for i, e := range errors {
 		fmt.Printf("%v %v %v %v %v\n", now, song, bpm, i, e)
 	}
 }
 
-func SongErrs(f io.Reader, userID string) map[string]int {
+func SongErrs(f io.Reader, userIDFilter string) map[string]int {
 	scanner := bufio.NewScanner(f)
 	errs := make(map[string]int)
 	for scanner.Scan() {
+                if userID != userIDFilter {
+                    continue
+                }
 		rec := strings.Split(scanner.Text(), " ")
-		song, _e := rec[1], rec[4]
+		userID, song, _e := rec[1], rec[2], rec[5]
 		e, err := strconv.Atoi(_e)
 		if err != nil {
 			log.Fatal(err)
