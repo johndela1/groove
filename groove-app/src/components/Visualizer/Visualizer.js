@@ -1,28 +1,47 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 
 export default function Visualizer() {
-  const ctx = useMemo(() => new AudioContext(), []);
+  const [data, setData] = React.useState([]);
 
   useEffect(() => {
-    async function setupAudio() {
-      await ctx.audioWorklet.addModule("./processor.js");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const source = ctx.createMediaStreamSource(stream);
+    const ctx = new window.AudioContext();
+    const analyser = ctx.createAnalyser();
+    let t0 = Date.now();
+    analyser.fftSize = 256;
 
-      const worklet = new AudioWorkletNode(ctx, "Processor");
+    const audioData = new Uint8Array(analyser.frequencyBinCount);
 
-      source.connect(worklet);
-      worklet.connect(ctx.destination);
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        const source = ctx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        requestAnimationFrame(process);
+      })
+
+    function process() {
+      analyser.getByteTimeDomainData(audioData);
+      const amplitude = Math.max(...audioData);
+      // const amplitude = audioData.reduce((x,y)=>Math.abs(x) + Math.abs(y));
+        if (amplitude > 150) {
+          let t1 = Date.now()
+          let dt = (60/(t1-t0))*1000;
+          setData(data => [...data, {amplitude, dt}]);
+          t0 = t1;
+        }
+      requestAnimationFrame(process);
     }
-    setupAudio();
-  }, [ctx]);
+
+    return () => {
+      ctx.close();
+    };
+  }, []);
 
   return (
     <div className="Visualizer">
-      <h1>Check out console log</h1>
+      {data.map((d, i) => 
+        <div key={i}>{d.amplitude} : {d.dt}</div>
+      )}
     </div>
   );
 }
