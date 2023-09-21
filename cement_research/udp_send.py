@@ -1,7 +1,7 @@
 import socket
 from time import sleep
 
-UDP_IP = "127.0.0.1"
+TCP_IP = '98.149.17.49'
 UDP_PORT = 8888
 MESSAGE = b"Hello, World!"
 

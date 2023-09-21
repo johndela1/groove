@@ -4,7 +4,7 @@ import socket
 from time import sleep
 
 
-TCP_IP = '127.0.0.1'
+TCP_IP = '98.149.17.49'
 TCP_PORT = 8888
 BUFFER_SIZE = 1024
 MESSAGE = b"Hello, World!"
