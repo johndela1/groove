@@ -1,0 +1,11 @@
+digraph G {
+    nginx -> hourebdev;
+    nginx -> cement;
+    client -> nginx;
+    cement -> nginx;
+    nginx -> client
+    cement -> hourebdev;
+    hourebdev -> pubsub;
+    pubsub -> cement;
+    vector -> nginx;
+}
