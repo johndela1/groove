@@ -12,6 +12,7 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
 export default function Canvas({ songs, selectedSong, delay, setDelay }) {
+  let ws = new WebSocket("ws://localhost:8888/chatsocket");
   const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
@@ -88,7 +89,14 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       prev = now;
       return;
     }
-    errors.push(now - prev - dts[note_idx++]);
+    let result = now - prev - dts[note_idx++];
+    new Promise((resolve) => {
+      setTimeout(() => {
+        ws.send(result);
+      }, 0);
+    });
+
+    errors.push(result);
     prev = now;
   };
 

@@ -69,10 +69,17 @@
       }
       now = Date.now()
       if (prev == null) {
-	  prev = now;
-	  return;
+        prev = now;
+        return;
       }
-      errors.push(now - prev - dts[note_idx++]);
+      result = now - prev - dts[note_idx++]
+      
+      new Promise((resolve) => {
+        setTimeout(() => {
+            ws.send(result);
+        }, 0);
+        });
+      errors.push(result);
       prev = now;
   }
   function start() {
@@ -84,7 +91,7 @@
 	  }
       }
   }
-
+  let ws = new WebSocket("ws://localhost:8888/chatsocket")
   song = "1010 1010"
   // song = "11011010"; // honkey tonk woman intro
   // song = "10   10 00 10   10 01 10"; // Greensleeves (begin)
