@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import time
+
 import tornado
 from tornado import websocket
 from tornado.options import define, options
@@ -50,14 +52,22 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 waiter.write_message(chat)
             except:
                 logging.error("Error sending message", exc_info=True)
-
+    t0 = 0
     def on_message(self, message):
-        logging.info("got message %r", message)
+        #breakpoint()
+        if message:
+            self.id = message
+            self.t0 = time.time()
+            ChatSocketHandler.send_updates(chat)
+            return
+
+        t1 = time.time()
+        logging.info("period %r for id s" % (t1 - self.t0, self.id))
+        self.t0 = t1
         parsed = tornado.escape.json_decode(message)
         chat = {"delta": parsed}
 
-        ChatSocketHandler.update_history(chat)
-        ChatSocketHandler.send_updates(chat)
+        #ChatSocketHandler.update_history(chat)
 
 
 async def main():

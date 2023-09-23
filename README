@@ -1,2 +1,15 @@
 use run.sh to start server if you want to store results
 open index.html in browswer, press x to start, n to restart
+
+
+In electronics and telecommunications, jitter is the deviation from true periodicity of a presumably periodic signal
+
+Jitter is the variation in time delay between when a signal is transmitted and when it's received over a network connection
+
+How is network jitter measured?
+Single Endpoint
+
+Where your network has control over just one of the endpoints (aka single-ended), jitter is determined by measuring the mean round-trip time (RTT), and the minimum RTT of a series of voice packets.
+Double endpoint
+
+In a double-ended path, the measurement used is the instantaneous jitter, or the variation between the intervals for transmitting and receiving a single packet. Jitter is the average difference between instantaneously measured jitter and the average instantaneous jitter throughout the transmission of a series of data packets.
