@@ -62,19 +62,23 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     is_first = True
     def on_message(self, message):
         if message:
+            if hasattr(self, 'id'):
+                self.test_period = float(message)
+                print("set period:", self.test_period)
+                return
             print("got id", message)
             self.id = message
             ChatSocketHandler.send_updates(message)
             return
 
-        t1 = time.time()
         if self.is_first:
             self.is_first = False
             self.t0 = time.time()
             return
-        TEST_PERIOD=.5
-        err = abs(TEST_PERIOD - (t1 - self.t0))
-        self.total_err += err
+
+        t1 = time.time()
+        err = self.test_period - (t1 - self.t0)
+        self.total_err += abs(err)
         logging.info("%s %f %f" % (self.id, err, self.total_err))
         self.t0 = t1
         #parsed = tornado.escape.json_decode(message)
