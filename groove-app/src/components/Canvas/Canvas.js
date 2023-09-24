@@ -15,14 +15,27 @@ const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 // let clientId = sessionStorage.getItem("clientId");
 let ws = new WebSocket(`ws://localhost:8888/chatsocket`);
 
+ws.onopen = function (event) {
+  ws.send(
+    JSON.stringify({
+      type: "join",
+      id: uuidv4(),
+    })
+  );
+};
+
 export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
 
   ws.onmessage = function (event) {
-    let parsedData = event.data; // Parse the string into an object
-    console.log(parsedData);
+    let parsedData = JSON.parse(event.data); // Parse the string into an object
+    if (parsedData.type == "count") {
+      setTimeout(() => {
+        beep();
+      }, msPerBeat);
+    }
     // sessionStorage.setItem("clientId", parsedData.clientId);
     // console.log(JSON.stringify(event.data));
   };
@@ -115,12 +128,6 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   };
 
   const start = () => {
-    ws.send(
-      JSON.stringify({
-        type: "join",
-        id: uuidv4(),
-      })
-    );
     for (let b in song) {
       if (song[b] !== "0") {
         setTimeout(() => {

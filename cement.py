@@ -61,19 +61,21 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 logging.error("Error sending message", exc_info=True)
     t0 = 0
     total_err = 0
-    is_first = True
-    def on_message(self, message):
+    id = None
+    async def on_message(self, message):
         message = tornado.escape.json_decode(message)
         type = message["type"]
         if type == "join":
             self.id = message["id"]
             ChatSocketHandler.send_updates(message)
-            if len(self.waiters) == 2:
+            # TODO: connection investigation
+            ids = [w.id for w in self.waiters if w.id]
+            if len(ids) == 2:
                 for _ in range(4):
                     ChatSocketHandler.send_updates(json.dumps({
                         "type": "count"
                     }))
-                    time.sleep(1)
+                    await asyncio.sleep(1)
         if type == "note":
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
@@ -92,11 +94,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         #     print("got id", message)
         #     self.id = message
         #     ChatSocketHandler.send_updates(message)
-        #     return
-
-        # if self.is_first:
-        #     self.is_first = False
-        #     self.t0 = time.time()
         #     return
 
        
