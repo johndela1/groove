@@ -4,6 +4,7 @@
 import asyncio
 import logging
 import time
+import json
 
 import tornado
 from tornado import websocket
@@ -13,19 +14,20 @@ define("port", default=8888, help="run on the given port", type=int)
 
 
 class Application(tornado.web.Application):
-    def __init__(self):
+    def __init__(self, **kwargs):
         handlers = [(r"/chatsocket", ChatSocketHandler)]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             xsrf_cookies=True,
         )
-        super().__init__(handlers, **settings)
+        super().__init__(handlers, **kwargs, **settings)
 
 
 class ChatSocketHandler(websocket.WebSocketHandler):
     waiters = set()
     history = []
     history_size = 200
+    test_period = 0.5
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -61,26 +63,43 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     total_err = 0
     is_first = True
     def on_message(self, message):
-        if message:
-            if hasattr(self, 'id'):
-                self.test_period = float(message)
-                print("set period:", self.test_period)
-                return
-            print("got id", message)
-            self.id = message
+        message = tornado.escape.json_decode(message)
+        type = message["type"]
+        if type == "join":
+            self.id = message["id"]
             ChatSocketHandler.send_updates(message)
-            return
+            if len(self.waiters) == 2:
+                for _ in range(4):
+                    ChatSocketHandler.send_updates(json.dumps({
+                        "type": "count"
+                    }))
+                    time.sleep(1)
+        if type == "note":
+            t1 = time.time()
+            err = self.test_period - (t1 - self.t0)
+            self.total_err += abs(err)
+            logging.info("%s %f %f" % (self.id, err, self.total_err))
+            self.t0 = t1
+        # if type == "end":
+        #     # send scoreboard
+        #     ChatSocketHandler.send_updates(message)
 
-        if self.is_first:
-            self.is_first = False
-            self.t0 = time.time()
-            return
+        # if message:
+        #     if hasattr(self, 'id'):
+        #         self.test_period = float(message)
+        #         print("set period:", self.test_period)
+        #         return
+        #     print("got id", message)
+        #     self.id = message
+        #     ChatSocketHandler.send_updates(message)
+        #     return
 
-        t1 = time.time()
-        err = self.test_period - (t1 - self.t0)
-        self.total_err += abs(err)
-        logging.info("%s %f %f" % (self.id, err, self.total_err))
-        self.t0 = t1
+        # if self.is_first:
+        #     self.is_first = False
+        #     self.t0 = time.time()
+        #     return
+
+       
         #parsed = tornado.escape.json_decode(message)
         #chat = {"delta": parsed}
 
@@ -89,7 +108,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
 async def main():
     tornado.options.parse_command_line()
-    app = Application()
+    app = Application(debug=True)
     app.listen(options.port)
     await asyncio.Event().wait()
 

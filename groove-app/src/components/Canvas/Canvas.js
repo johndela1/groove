@@ -1,4 +1,5 @@
 import React from "react";
+import { v4 as uuidv4 } from "uuid";
 import { beep, deltas } from "./helpers";
 import "./Canvas.styles.scss";
 
@@ -11,11 +12,20 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
+// let clientId = sessionStorage.getItem("clientId");
+let ws = new WebSocket(`ws://localhost:8888/chatsocket`);
+
 export default function Canvas({ songs, selectedSong, delay, setDelay }) {
-  let ws = new WebSocket("ws://localhost:8888/chatsocket");
   const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
+
+  ws.onmessage = function (event) {
+    let parsedData = event.data; // Parse the string into an object
+    console.log(parsedData);
+    // sessionStorage.setItem("clientId", parsedData.clientId);
+    // console.log(JSON.stringify(event.data));
+  };
 
   let prev = null;
   let note_idx = 0;
@@ -92,7 +102,11 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     let result = now - prev - dts[note_idx++];
     new Promise((resolve) => {
       setTimeout(() => {
-        ws.send(result);
+        ws.send(
+          JSON.stringify({
+            type: "note",
+          })
+        );
       }, 0);
     });
 
@@ -101,6 +115,12 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   };
 
   const start = () => {
+    ws.send(
+      JSON.stringify({
+        type: "join",
+        id: uuidv4(),
+      })
+    );
     for (let b in song) {
       if (song[b] !== "0") {
         setTimeout(() => {
@@ -111,20 +131,23 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   };
 
   return (
-    <canvas
-      ref={ref}
-      id="myCanvas"
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
-      className={
-        delay
-          ? Math.abs(delay) < ACCURACY_STANDARD
-            ? "accurate"
-            : "inaccurate"
-          : ""
-      }
-    >
-      Your browser does not support the canvas element.
-    </canvas>
+    <div>
+      <canvas
+        ref={ref}
+        id="myCanvas"
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className={
+          delay
+            ? Math.abs(delay) < ACCURACY_STANDARD
+              ? "accurate"
+              : "inaccurate"
+            : ""
+        }
+      >
+        Your browser does not support the canvas element.
+      </canvas>
+      <button onClick={() => ws.close()}>close socket</button>
+    </div>
   );
 }

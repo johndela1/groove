@@ -7,7 +7,8 @@ const rootElement = document.getElementById("root");
 const root = createRoot(rootElement);
 
 root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+  <App />
+  // <StrictMode>
+  //   <App />
+  // </StrictMode>
 );

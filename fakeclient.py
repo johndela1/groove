@@ -3,18 +3,23 @@
 import asyncio
 import threading
 import uuid
+import json
 
 from time import sleep
 
 from websockets.sync.client import connect
 from websockets.exceptions import ConnectionClosedOK
 
-TEST_PERIOD = 10
+TEST_PERIOD = 0.5
+
 
 def play(ws):
-    for _ in range(100):
-        ws.send("")
+    for _ in range(2):
+        ws.send(json.dumps({
+            "type": "note",
+        }))
         sleep(TEST_PERIOD)
+
 
 def handle_updates(ws):
     while True:
@@ -27,13 +32,16 @@ def handle_updates(ws):
         except ConnectionClosedOK:
             print('closed')
 
+
 stop = False
 with connect("ws://localhost:8888/chatsocket") as ws:
-    ws.send(str(uuid.uuid4())[:4])
-    ws.send(str(TEST_PERIOD))
+    ws.send(json.dumps({
+        "type": "join",
+        "id": str(uuid.uuid4())[:4],
+    }))
     t = threading.Thread(target=handle_updates, args=[ws])
     t.start()
     play(ws)
-    stop=True
+    stop = True
     ws.close()
     t.join()
