@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import asyncio
 import logging
 import time
@@ -55,17 +58,24 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             except:
                 logging.error("Error sending message", exc_info=True)
     t0 = 0
+    total_err = 0
+    is_first = True
     def on_message(self, message):
-        #breakpoint()
         if message:
             print("got id", message)
             self.id = message
-            self.t0 = time.time()
             ChatSocketHandler.send_updates(message)
             return
 
         t1 = time.time()
-        logging.info("period %r for id %s" % (t1 - self.t0, self.id))
+        if self.is_first:
+            self.is_first = False
+            self.t0 = time.time()
+            return
+        TEST_PERIOD=.5
+        err = abs(TEST_PERIOD - (t1 - self.t0))
+        self.total_err += err
+        logging.info("%s %f %f" % (self.id, err, self.total_err))
         self.t0 = t1
         #parsed = tornado.escape.json_decode(message)
         #chat = {"delta": parsed}
