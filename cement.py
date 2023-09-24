@@ -33,9 +33,11 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         return True
 
     def open(self):
+        print("open")
         ChatSocketHandler.waiters.add(self)
 
     def on_close(self):
+        print("close")
         ChatSocketHandler.waiters.remove(self)
 
     @classmethod
@@ -45,29 +47,30 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             cls.history = cls.history[-cls.history_size:]
 
     @classmethod
-    def send_updates(cls, chat):
+    def send_updates(cls, message):
         logging.info("sending message to %d waiters", len(cls.waiters))
         for waiter in cls.waiters:
             try:
-                waiter.write_message(chat)
+                waiter.write_message(message)
             except:
                 logging.error("Error sending message", exc_info=True)
     t0 = 0
     def on_message(self, message):
         #breakpoint()
         if message:
+            print("got id", message)
             self.id = message
             self.t0 = time.time()
-            ChatSocketHandler.send_updates(chat)
+            ChatSocketHandler.send_updates(message)
             return
 
         t1 = time.time()
-        logging.info("period %r for id s" % (t1 - self.t0, self.id))
+        logging.info("period %r for id %s" % (t1 - self.t0, self.id))
         self.t0 = t1
-        parsed = tornado.escape.json_decode(message)
-        chat = {"delta": parsed}
+        #parsed = tornado.escape.json_decode(message)
+        #chat = {"delta": parsed}
 
-        #ChatSocketHandler.update_history(chat)
+        #chatChatSocketHandler.update_history(chat)
 
 
 async def main():
