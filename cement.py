@@ -63,6 +63,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 logging.error("Error sending message", exc_info=True)
     t0 = 0
     total_err = 0
+    errs = list()
     id = None
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
@@ -72,25 +73,39 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             ChatSocketHandler.send_updates(message)
             # TODO: connection investigation
             ids = [w.id for w in self.waiters if w.id]
-            if len(ids) == 2:
+            if len(ids) == 1:
                 ChatSocketHandler.send_updates(json.dumps({
                     "type": "ready"
                 }))
         if type == "start":
-            ChatSocketHandler.start_count += 1
-            ids = [w.id for w in self.waiters if w.id]
-            if len(ids) == ChatSocketHandler.start_count:
-                for _ in range(4):
-                    ChatSocketHandler.send_updates(json.dumps({
-                        "type": "count"
-                    }))
-                    await asyncio.sleep(1)
+            async def f():
+                print("JJXXX")
+                ChatSocketHandler.start_count += 1
+                ids = [w.id for w in self.waiters if w.id]
+                if True: #len(ids) == ChatSocketHandler.start_count:
+                    for _ in range(4):
+                        logging.info("counting in")
+                        ChatSocketHandler.send_updates(json.dumps({
+                            "type": "count"
+                        }))
+                        await asyncio.sleep(1)
+
+                    for _ in range(4):
+                        logging.info("playing")
+                        self.t0 = time.time()
+                        ChatSocketHandler.send_updates(json.dumps({
+                            "type": "count"
+                        }))
+                        await asyncio.sleep(1)
+            asyncio.create_task(f())
         if type == "note":
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
+            self.errs.append(err)
             self.total_err += abs(err)
             logging.info("%s %f %f" % (self.id, err, self.total_err))
             self.t0 = t1
+            ChatSocketHandler.send_updates(json.dumps({'type': 'score', 'score': self.total_err }))
         # if type == "end":
         #     # send scoreboard
         #     ChatSocketHandler.send_updates(message)
