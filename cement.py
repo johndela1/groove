@@ -28,6 +28,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     history = []
     history_size = 200
     test_period = 0.5
+    start_count = 0
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -43,6 +44,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     def on_close(self):
         print("close")
+        ChatSocketHandler.start_count = 0
         ChatSocketHandler.waiters.remove(self)
 
     @classmethod
@@ -71,6 +73,13 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             # TODO: connection investigation
             ids = [w.id for w in self.waiters if w.id]
             if len(ids) == 2:
+                ChatSocketHandler.send_updates(json.dumps({
+                    "type": "ready"
+                }))
+        if type == "start":
+            ChatSocketHandler.start_count += 1
+            ids = [w.id for w in self.waiters if w.id]
+            if len(ids) == ChatSocketHandler.start_count:
                 for _ in range(4):
                     ChatSocketHandler.send_updates(json.dumps({
                         "type": "count"

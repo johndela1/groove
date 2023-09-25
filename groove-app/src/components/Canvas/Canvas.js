@@ -25,13 +25,22 @@ ws.onopen = function (event) {
 };
 
 export default function Canvas({ songs, selectedSong, delay, setDelay }) {
+  const [isReady, setIsReady] = React.useState(false);
+  const [isWaiting, setIsWaiting] = React.useState(false);
+  const [isInGame, setIsInGame] = React.useState(false);
   const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
 
   ws.onmessage = function (event) {
     let parsedData = JSON.parse(event.data); // Parse the string into an object
+
+    if (parsedData.type == "ready") {
+      setIsReady(true);
+    }
+
     if (parsedData.type == "count") {
+      setIsInGame(true);
       setTimeout(() => {
         beep();
       }, msPerBeat);
@@ -52,6 +61,15 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     is_first = true;
     setDelay(0);
     ref.current.getContext("2d").clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  };
+
+  const startGame = () => {
+    setIsWaiting(true);
+    ws.send(
+      JSON.stringify({
+        type: "start",
+      })
+    );
   };
 
   React.useEffect(() => {
@@ -154,6 +172,11 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       >
         Your browser does not support the canvas element.
       </canvas>
+      {isReady && !isInGame && (
+        <button disabled={isWaiting} onClick={() => startGame()}>
+          Ready
+        </button>
+      )}
       <button onClick={() => ws.close()}>close socket</button>
     </div>
   );
