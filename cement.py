@@ -27,7 +27,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     waiters = set()
     history = []
     history_size = 200
-    test_period = 0.5
+    test_period = 1
     start_count = 0
 
     def get_compression_options(self):
@@ -55,7 +55,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     @classmethod
     def send_updates(cls, message):
-        logging.info("sending message to %d waiters", len(cls.waiters))
+        logging.info("sending message type %s to %d waiters", str(message), len(cls.waiters))
+
         for waiter in cls.waiters:
             try:
                 waiter.write_message(message)
@@ -78,6 +79,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                     "type": "ready"
                 }))
         if type == "start":
+            self.t0 = time.time() + 4
             async def f():
                 print("JJXXX")
                 ChatSocketHandler.start_count += 1
@@ -92,7 +94,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
                     for _ in range(4):
                         logging.info("playing")
-                        self.t0 = time.time()
                         ChatSocketHandler.send_updates(json.dumps({
                             "type": "count"
                         }))
@@ -103,7 +104,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
             self.total_err += abs(err)
-            logging.info("%s %f %f" % (self.id, err, self.total_err))
+            logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
             self.t0 = t1
             ChatSocketHandler.send_updates(json.dumps({'type': 'score', 'score': self.total_err }))
         # if type == "end":

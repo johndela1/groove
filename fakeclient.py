@@ -10,11 +10,12 @@ from time import sleep
 from websockets.sync.client import connect
 from websockets.exceptions import ConnectionClosedOK
 
-TEST_PERIOD = 0.5
+TEST_PERIOD = 1
 
 
 def play(ws):
-    for _ in range(2):
+    for _ in range(4):
+        print("play note")
         ws.send(json.dumps({
             "type": "note",
         }))
@@ -41,6 +42,8 @@ with connect("ws://localhost:8888/chatsocket") as ws:
     }))
     t = threading.Thread(target=handle_updates, args=[ws])
     t.start()
+    ws.send(json.dumps({"type": "start"}))
+    sleep(5)
     play(ws)
     stop = True
     ws.close()
