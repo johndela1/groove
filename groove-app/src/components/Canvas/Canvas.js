@@ -96,14 +96,13 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   });
 
   const note = () => {
+    ws.send(
+      JSON.stringify({
+        type: "note",
+      })
+    );
     if (is_first) {
       setTimeout(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "http://localhost:8000");
-        xhr.setRequestHeader("Content-Type", "application/json");
-        var payload = [song, bpm, errors].join(" ");
-        xhr.send(payload);
-
         let avg = average(errors);
         setDelay(avg);
         if (avg) {
@@ -131,16 +130,6 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       return;
     }
     let result = now - prev - dts[note_idx++];
-    new Promise((resolve) => {
-      setTimeout(() => {
-        ws.send(
-          JSON.stringify({
-            type: "note",
-          })
-        );
-      }, 0);
-    });
-
     errors.push(result);
     prev = now;
   };
