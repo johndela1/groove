@@ -29,6 +29,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     history_size = 200
     test_period = 1
     start_count = 0
+    scores = {}
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -43,9 +44,9 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         ChatSocketHandler.waiters.add(self)
 
     def on_close(self):
-        print("close")
         ChatSocketHandler.start_count = 0
         ChatSocketHandler.waiters.remove(self)
+        del ChatSocketHandler.scores[self.id]
 
     @classmethod
     def update_history(cls, chat):
@@ -80,16 +81,16 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             ChatSocketHandler.send_updates(message)
             # TODO: connection investigation
             ids = [w.id for w in self.waiters if w.id]
-            if len(ids) == 1:
-                ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
+            ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
         if type_ == "start":
             self.t0 = time.time() + 4
 
             async def f():
-                print("JJXXX")
                 ChatSocketHandler.start_count += 1
                 ids = [w.id for w in self.waiters if w.id]
-                if True:  # len(ids) == ChatSocketHandler.start_count:
+                print(len(ids))
+                print(ChatSocketHandler.start_count)
+                if len(ids) == ChatSocketHandler.start_count:
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "count"})
@@ -101,6 +102,12 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                             json.dumps({"type": "count"})
                         )
                         await asyncio.sleep(1)
+                    await asyncio.sleep(1)
+                    for w in self.waiters:
+                        ChatSocketHandler.scores[w.id] = w.total_err
+                    ChatSocketHandler.send_updates(
+                        json.dumps({"type": "end", "scores": ChatSocketHandler.scores})
+                    )
 
             asyncio.create_task(f())
         if type_ == "note":
@@ -119,25 +126,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 )
             )
             logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
-        # if type == "end":
-        #     # send scoreboard
-        #     ChatSocketHandler.send_updates(message)
-
-        # if message:
-        #     if hasattr(self, 'id'):
-        #         self.test_period = float(message)
-        #         print("set period:", self.test_period)
-        #         return
-        #     print("got id", message)
-        #     self.id = message
-        #     ChatSocketHandler.send_updates(message)
-        #     return
-
-        # parsed = tornado.escape.json_decode(message)
-        # chat = {"delta": parsed}
-
-        # chatChatSocketHandler.update_history(chat)
-
 
 async def main():
     tornado.options.parse_command_line()

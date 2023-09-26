@@ -1,4 +1,5 @@
 export const beep = () => {
+  console.log("beep");
   const hz = 200;
   const cx = new AudioContext();
   const o = cx.createOscillator();
@@ -6,7 +7,7 @@ export const beep = () => {
   o.frequency.setValueAtTime(hz, cx.currentTime);
   o.connect(cx.destination);
   o.start(cx.currentTime);
-  o.stop(cx.currentTime + 0.001);
+  o.stop(cx.currentTime + 0.05);
 };
 
 export const deltas = (song, msPerBeat) => {

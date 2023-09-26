@@ -28,6 +28,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [isReady, setIsReady] = React.useState(false);
   const [isWaiting, setIsWaiting] = React.useState(false);
   const [isInGame, setIsInGame] = React.useState(false);
+  const [scores, setScores] = React.useState({});
   const song = songs[selectedSong].notes.replace(/\s/g, "");
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
@@ -44,6 +45,10 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       setTimeout(() => {
         beep();
       }, msPerBeat);
+    }
+
+    if (parsedData.type == "end") {
+      setScores(parsedData.scores);
     }
     // sessionStorage.setItem("clientId", parsedData.clientId);
     // console.log(JSON.stringify(event.data));
@@ -79,7 +84,9 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
           reset();
           break;
         case " ":
-          note();
+          if (Object.keys(scores).length === 0) {
+            note();
+          }
           break;
         case "x":
           reset();
@@ -101,7 +108,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         type: "note",
       })
     );
-    if (is_first) {
+    if (is_first && ref.current) {
       setTimeout(() => {
         let avg = average(errors);
         setDelay(avg);
@@ -167,6 +174,13 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         </button>
       )}
       <button onClick={() => ws.close()}>close socket</button>
+      {scores &&
+        Object.keys(scores).map((key, index) => (
+          <p key={index}>
+            {" "}
+            {key} has score: {scores[key]}
+          </p>
+        ))}
     </div>
   );
 }
