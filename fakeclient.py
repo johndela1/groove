@@ -16,9 +16,13 @@ TEST_PERIOD = 1
 def play(ws):
     for _ in range(4):
         print("play note")
-        ws.send(json.dumps({
-            "type": "note",
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "type": "note",
+                }
+            )
+        )
         sleep(TEST_PERIOD)
 
 
@@ -31,15 +35,19 @@ def handle_updates(ws):
         try:
             print("got update", ws.recv())
         except ConnectionClosedOK:
-            print('closed')
+            print("closed")
 
 
 stop = False
 with connect("ws://localhost:8888/chatsocket") as ws:
-    ws.send(json.dumps({
-        "type": "join",
-        "id": str(uuid.uuid4())[:4],
-    }))
+    ws.send(
+        json.dumps(
+            {
+                "type": "join",
+                "id": str(uuid.uuid4())[:4],
+            }
+        )
+    )
     t = threading.Thread(target=handle_updates, args=[ws])
     t.start()
     ws.send(json.dumps({"type": "start"}))
