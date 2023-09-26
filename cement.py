@@ -68,8 +68,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     id = None
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
-        type = message["type"]
-        if type == "join":
+        type_ = message["type"]
+        if type_ == "join":
             self.id = message["id"]
             ChatSocketHandler.send_updates(message)
             # TODO: connection investigation
@@ -78,7 +78,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 ChatSocketHandler.send_updates(json.dumps({
                     "type": "ready"
                 }))
-        if type == "start":
+        if type_ == "start":
             self.t0 = time.time() + 4
             async def f():
                 print("JJXXX")
@@ -99,7 +99,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         }))
                         await asyncio.sleep(1)
             asyncio.create_task(f())
-        if type == "note":
+        if type_ == "note":
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
