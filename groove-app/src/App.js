@@ -3,12 +3,16 @@ import Canvas from "./components/Canvas";
 import Hints from "./components/Hints";
 import "./App.css";
 
+const response = await fetch("http://localhost:8888/songs");
+const res = await response.json();
+const songs = res.res;
+
 export default function App() {
   const songs = [
-    { name: "default", notes: "1010 1010" },
+    { name: "default", notes: "01010 1010" },
     { name: "honkey tonk woman intro", notes: "11011010" },
     { name: "Greensleeves (begin)", notes: "10   10 00 10   10 01 10" },
-    { name: "Greensleeves (second part)", notes: "10 00 00   10 01 10" }
+    { name: "Greensleeves (second part)", notes: "10 00 00   10 01 10" },
   ];
   const [selectedSong, setSong] = React.useState(0);
   const [delay, setDelay] = React.useState(0);

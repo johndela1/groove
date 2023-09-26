@@ -13,7 +13,7 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
 // let clientId = sessionStorage.getItem("clientId");
-let ws = new WebSocket(`ws://98.149.17.49:8888/chatsocket`);
+let ws = new WebSocket(`ws://localhost:8888/chatsocket`);
 
 ws.onopen = function (event) {
   ws.send(
@@ -30,27 +30,32 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [isInGame, setIsInGame] = React.useState(false);
   const [scores, setScores] = React.useState({});
   const song = songs[selectedSong].notes.replace(/\s/g, "");
+  const tss = [];
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
 
   ws.onmessage = function (event) {
-    let parsedData = JSON.parse(event.data); // Parse the string into an object
+    let message = JSON.parse(event.data); // Parse the string into an object
 
-    if (parsedData.type == "ready") {
+    if (message.type == "ready") {
       setIsReady(true);
     }
 
-    if (parsedData.type == "count") {
+    if (message.type == "count" || message.type == "snote") {
       setIsInGame(true);
       setTimeout(() => {
         beep();
       }, msPerBeat);
+
+      if (message.type == "snote") {
+        tss.push(Date.now());
+      }
     }
 
-    if (parsedData.type == "end") {
-      setScores(parsedData.scores);
+    if (message.type == "end") {
+      setScores(message.scores);
     }
-    // sessionStorage.setItem("clientId", parsedData.clientId);
+    // sessionStorage.setItem("clientId", message.clientId);
     // console.log(JSON.stringify(event.data));
   };
 
@@ -138,6 +143,8 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     }
     let result = now - prev - dts[note_idx++];
     errors.push(result);
+    console.log({ errors });
+    console.log({ dts });
     prev = now;
   };
 

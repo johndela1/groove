@@ -102,7 +102,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
-                            json.dumps({"type": "count"})
+                            json.dumps({"type": "snote"})
                         )
                         await asyncio.sleep(1)
                     await asyncio.sleep(1)
@@ -132,6 +132,12 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
 
 class SongsHandler(tornado.web.RequestHandler):
+
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def get(self):
         res = []
         with open("songs", "r") as f:
