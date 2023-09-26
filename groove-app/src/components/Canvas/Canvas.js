@@ -13,7 +13,7 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
 // let clientId = sessionStorage.getItem("clientId");
-let ws = new WebSocket(`ws://localhost:8888/chatsocket`);
+let ws = new WebSocket(`ws://98.149.17.49:8888/chatsocket`);
 
 ws.onopen = function (event) {
   ws.send(

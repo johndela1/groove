@@ -15,7 +15,10 @@ define("port", default=8888, help="run on the given port", type=int)
 
 class Application(tornado.web.Application):
     def __init__(self, **kwargs):
-        handlers = [(r"/chatsocket", ChatSocketHandler)]
+        handlers = [
+            (r"/chatsocket", ChatSocketHandler),
+            (r"/songs", SongsHandler),
+        ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             xsrf_cookies=True,
@@ -126,6 +129,18 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 )
             )
             logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
+
+
+class SongsHandler(tornado.web.RequestHandler):
+    def get(self):
+        res = []
+        with open("songs", "r") as f:
+            for line in f:
+                name = line.split('|')[0]
+                res.append(name)
+        import json
+        return self.write(json.dumps(dict(res=res)))
+
 
 async def main():
     tornado.options.parse_command_line()
