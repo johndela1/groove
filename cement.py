@@ -51,21 +51,27 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     def update_history(cls, chat):
         cls.history.append(chat)
         if len(cls.history) > cls.history_size:
-            cls.history = cls.history[-cls.history_size:]
+            cls.history = cls.history[-cls.history_size :]
 
     @classmethod
     def send_updates(cls, message):
-        logging.info("sending message type %s to %d waiters", str(message), len(cls.waiters))
+        logging.info(
+            "sending message type %s to %d waiters",
+            str(message),
+            len(cls.waiters),
+        )
 
         for waiter in cls.waiters:
             try:
                 waiter.write_message(message)
             except:
                 logging.error("Error sending message", exc_info=True)
+
     t0 = 0
     total_err = 0
     errs = list()
     id = None
+
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
         type_ = message["type"]
@@ -75,38 +81,43 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             # TODO: connection investigation
             ids = [w.id for w in self.waiters if w.id]
             if len(ids) == 1:
-                ChatSocketHandler.send_updates(json.dumps({
-                    "type": "ready"
-                }))
+                ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
         if type_ == "start":
             self.t0 = time.time() + 4
+
             async def f():
                 print("JJXXX")
                 ChatSocketHandler.start_count += 1
                 ids = [w.id for w in self.waiters if w.id]
-                if True: #len(ids) == ChatSocketHandler.start_count:
+                if True:  # len(ids) == ChatSocketHandler.start_count:
                     for _ in range(4):
-                        logging.info("counting in")
-                        ChatSocketHandler.send_updates(json.dumps({
-                            "type": "count"
-                        }))
+                        ChatSocketHandler.send_updates(
+                            json.dumps({"type": "count"})
+                        )
                         await asyncio.sleep(1)
 
                     for _ in range(4):
-                        logging.info("playing")
-                        ChatSocketHandler.send_updates(json.dumps({
-                            "type": "count"
-                        }))
+                        ChatSocketHandler.send_updates(
+                            json.dumps({"type": "count"})
+                        )
                         await asyncio.sleep(1)
+
             asyncio.create_task(f())
         if type_ == "note":
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
             self.total_err += abs(err)
-            logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
             self.t0 = t1
-            ChatSocketHandler.send_updates(json.dumps({'type': 'score', 'score': self.total_err }))
+            ChatSocketHandler.send_updates(
+                json.dumps(
+                    {
+                        "type": "score",
+                        "errs": self.errs,
+                        "score": self.total_err,
+                    }
+                )
+            )
         # if type == "end":
         #     # send scoreboard
         #     ChatSocketHandler.send_updates(message)
@@ -121,11 +132,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         #     ChatSocketHandler.send_updates(message)
         #     return
 
-       
-        #parsed = tornado.escape.json_decode(message)
-        #chat = {"delta": parsed}
+        # parsed = tornado.escape.json_decode(message)
+        # chat = {"delta": parsed}
 
-        #chatChatSocketHandler.update_history(chat)
+        # chatChatSocketHandler.update_history(chat)
 
 
 async def main():
