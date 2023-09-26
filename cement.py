@@ -118,6 +118,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                     }
                 )
             )
+            logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
         # if type == "end":
         #     # send scoreboard
         #     ChatSocketHandler.send_updates(message)
