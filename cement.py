@@ -49,6 +49,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     test_period = 1
     start_count = 0
     scores = {}
+    t0 = 0
+    total_err = 0
+    errs = list()
+    id = None
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -63,7 +67,9 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         ChatSocketHandler.waiters.add(self)
 
     def on_close(self):
+        ChatSocketHandler.errs = list()
         ChatSocketHandler.start_count = 0
+        ChatSocketHandler.choices = []
         ChatSocketHandler.waiters.remove(self)
         del ChatSocketHandler.scores[self.id]
 
@@ -94,10 +100,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             except:
                 logging.error("Error sending message", exc_info=True)
 
-    t0 = 0
-    total_err = 0
-    errs = list()
-    id = None
+
 
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
@@ -128,7 +131,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         )
                         await asyncio.sleep(1)
 
-                    for delta in dts:
+                    for delta in dts[:-1]:
                         await asyncio.sleep(delta)
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "snote"})
