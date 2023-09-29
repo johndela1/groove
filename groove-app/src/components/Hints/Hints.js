@@ -6,7 +6,7 @@ export default function Hints(props) {
   return (
     <div className="hints">
       <div className="hints--song">
-        Current selected song is: <em>{song.name} </em>
+        Current selected song is: <em>{song} </em>
       </div>
       {delay ? (
         <div className="hints--delay">

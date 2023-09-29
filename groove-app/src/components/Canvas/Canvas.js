@@ -29,7 +29,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [isWaiting, setIsWaiting] = React.useState(false);
   const [isInGame, setIsInGame] = React.useState(false);
   const [scores, setScores] = React.useState({});
-  const song = songs[selectedSong].notes.replace(/\s/g, "");
+  const song = songs[selectedSong];
   const tss = [];
   const dts = deltas(song, msPerBeat);
   const ref = React.createRef();
@@ -78,6 +78,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     ws.send(
       JSON.stringify({
         type: "start",
+        song: songs[selectedSong],
       })
     );
   };
@@ -92,10 +93,6 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
           if (Object.keys(scores).length === 0) {
             note();
           }
-          break;
-        case "x":
-          reset();
-          start();
           break;
         default:
           break;
@@ -113,7 +110,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         type: "note",
       })
     );
-    if (is_first && ref.current) {
+    if (is_first) {
       setTimeout(() => {
         let avg = average(errors);
         setDelay(avg);
@@ -122,16 +119,18 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
             ? console.error("avg slow", avg)
             : console.error("avg fast", avg);
         }
-        const cx = ref.current.getContext("2d");
-        let offset = 0;
-        let offsetUser = 0;
-        for (let i in dts) {
-          if (errors[i] > 0) console.error("slow", errors[i]);
-          if (errors[i] < 0) console.error("fast", errors[i]);
-          cx.fillRect(offset, 10, 20, 40);
-          cx.fillRect(offsetUser, 50, 20, 40);
-          offset += dts[i] / 2;
-          offsetUser += (dts[i] + errors[i]) / 2;
+        if (ref.current) {
+          const cx = ref.current.getContext("2d");
+          let offset = 0;
+          let offsetUser = 0;
+          for (let i in dts) {
+            if (errors[i] > 0) console.error("slow", errors[i]);
+            if (errors[i] < 0) console.error("fast", errors[i]);
+            cx.fillRect(offset, 10, 20, 40);
+            cx.fillRect(offsetUser, 50, 20, 40);
+            offset += dts[i] / 2;
+            offsetUser += (dts[i] + errors[i]) / 2;
+          }
         }
       }, msPerBeat * song.length);
       is_first = false;
@@ -143,19 +142,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     }
     let result = now - prev - dts[note_idx++];
     errors.push(result);
-    console.log({ errors });
-    console.log({ dts });
     prev = now;
-  };
-
-  const start = () => {
-    for (let b in song) {
-      if (song[b] !== "0") {
-        setTimeout(() => {
-          beep();
-        }, msPerBeat * b);
-      }
-    }
   };
 
   return (

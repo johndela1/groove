@@ -12,6 +12,21 @@ from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 
+def notes_to_deltas(notes, bpm=60):
+    bars = notes.split()
+    dts = []
+    bps = bpm/60
+    for notes in bars:
+        for i, note in enumerate(notes):
+            if i == 0:
+                dts.append(0)
+            dts.append(4/int(note))
+    print(dts)
+    return dts
+# assert notes_to_deltas("4444") == [0,1,1,1]
+# assert notes_to_deltas("4444 4444 442 442 888844 888844 442 442") == [0,1,1,1, 0,1,1,1, 0,1,2, 0,1,2, 0,0.5,0.5,0.5,1,1, 0,0.5,0.5,1,1, 0,1,2, 0,1,2]
+# 10101010 = 0,1,1,1
+
 
 class Application(tornado.web.Application):
     def __init__(self, **kwargs):
@@ -29,6 +44,7 @@ class Application(tornado.web.Application):
 class ChatSocketHandler(websocket.WebSocketHandler):
     waiters = set()
     history = []
+    choices = []
     history_size = 200
     test_period = 1
     start_count = 0
@@ -50,6 +66,13 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         ChatSocketHandler.start_count = 0
         ChatSocketHandler.waiters.remove(self)
         del ChatSocketHandler.scores[self.id]
+
+    def load_song(self, needle, file):
+        for line in file:
+            haystack, song = line.split('|')
+            if needle == haystack:
+                return song
+
 
     @classmethod
     def update_history(cls, chat):
@@ -86,25 +109,31 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             ids = [w.id for w in self.waiters if w.id]
             ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
         if type_ == "start":
+            
             self.t0 = time.time() + 4
-
+            ChatSocketHandler.choices.append(message["song"])
             async def f():
                 ChatSocketHandler.start_count += 1
                 ids = [w.id for w in self.waiters if w.id]
-                print(len(ids))
-                print(ChatSocketHandler.start_count)
                 if len(ids) == ChatSocketHandler.start_count:
+                    song_name = ChatSocketHandler.choices[0]
+                    with open("songs", "r") as f:
+                        notes = self.load_song(song_name, f)
+                    
+                    dts = notes_to_deltas(notes)
+
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "count"})
                         )
                         await asyncio.sleep(1)
 
-                    for _ in range(4):
+                    for delta in dts:
+                        await asyncio.sleep(delta)
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "snote"})
                         )
-                        await asyncio.sleep(1)
+                        
                     await asyncio.sleep(1)
                     for w in self.waiters:
                         ChatSocketHandler.scores[w.id] = w.total_err
