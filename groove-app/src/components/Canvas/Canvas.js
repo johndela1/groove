@@ -59,7 +59,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
 
       if (message.type == "snote") {
         setTimeout(() => {
-          beep(message.pitch);
+          beep(message.pitch, message.duration);
         }, msPerBeat);
         let now = Date.now();
         if (!isFrist) {

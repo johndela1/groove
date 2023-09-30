@@ -21,8 +21,8 @@ def song_to_deltas(notes, bpm=60):
     bps = bpm/60
     for notes in bars:
         for i, note in enumerate(notes[::3]):
-            if i == 0:
-                dts.append(0)
+            # if i == 0:
+            #     dts.append(0)
             dts.append(4/int(note))
     return dts
 
@@ -141,11 +141,11 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         )
                         await asyncio.sleep(1)
 
-                    for i, delta in enumerate(dts[:-1]):
-                        await asyncio.sleep(delta)
+                    for i, delta in enumerate(dts):
                         ChatSocketHandler.send_updates(
-                            json.dumps({"type": "snote", "pitch": pitches[i]})
+                            json.dumps({"type": "snote", "pitch": pitches[i], "duration": dts[i]})
                         )
+                        await asyncio.sleep(delta)
                         
                     await asyncio.sleep(1)
                     for w in self.waiters:
