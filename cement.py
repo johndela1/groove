@@ -12,20 +12,29 @@ from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 
-def notes_to_deltas(notes, bpm=60):
+def grouper(iterable, n):
+    return zip(*([iter(iterable)]*n))
+
+def song_to_deltas(notes, bpm=60):
     bars = notes.split()
     dts = []
     bps = bpm/60
     for notes in bars:
-        for i, note in enumerate(notes):
+        for i, note in enumerate(notes[::3]):
             if i == 0:
                 dts.append(0)
             dts.append(4/int(note))
-    print(dts)
     return dts
-# assert notes_to_deltas("4444") == [0,1,1,1]
-# assert notes_to_deltas("4444 4444 442 442 888844 888844 442 442") == [0,1,1,1, 0,1,1,1, 0,1,2, 0,1,2, 0,0.5,0.5,0.5,1,1, 0,0.5,0.5,1,1, 0,1,2, 0,1,2]
-# 10101010 = 0,1,1,1
+
+def song_to_pitches(notes):
+    bars = notes.split()
+    pitches = []
+    for bar in bars:
+        notes = grouper(bar, 3)
+        for note in notes:
+            _, *pitch = note
+            pitches.append("".join(pitch))
+    return pitches
 
 
 class Application(tornado.web.Application):
@@ -121,9 +130,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 if len(ids) == ChatSocketHandler.start_count:
                     song_name = ChatSocketHandler.choices[0]
                     with open("songs", "r") as f:
-                        notes = self.load_song(song_name, f)
+                        song = self.load_song(song_name, f)
                     
-                    dts = notes_to_deltas(notes)
+                    dts = song_to_deltas(song)
+                    pitches = song_to_pitches(song)
 
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
@@ -131,10 +141,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         )
                         await asyncio.sleep(1)
 
-                    for delta in dts[:-1]:
+                    for i, delta in enumerate(dts[:-1]):
                         await asyncio.sleep(delta)
                         ChatSocketHandler.send_updates(
-                            json.dumps({"type": "snote"})
+                            json.dumps({"type": "snote", "pitch": pitches[i]})
                         )
                         
                     await asyncio.sleep(1)

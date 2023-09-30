@@ -1,10 +1,22 @@
-export const beep = () => {
+const frequencies = {
+  default: 600,
+  G3: 196.0,
+  C4: 261.63,
+  D4: 293.66,
+  E4: 329.63,
+  F4: 349.23,
+  G4: 392.0,
+  A4: 440.0,
+  B4: 493.88,
+  C5: 523.25,
+};
+
+export const beep = (hz = "default") => {
   console.log("beep");
-  const hz = 200;
   const cx = new AudioContext();
   const o = cx.createOscillator();
   o.type = "sine";
-  o.frequency.setValueAtTime(hz, cx.currentTime);
+  o.frequency.setValueAtTime(frequencies[hz], cx.currentTime);
   o.connect(cx.destination);
   o.start(cx.currentTime);
   o.stop(cx.currentTime + 0.05);

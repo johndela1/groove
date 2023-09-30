@@ -47,7 +47,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         setIsReady(true);
       }
 
-      if (message.type == "count" || message.type == "snote") {
+      if (message.type == "count") {
         setIsInGame(true);
         setTimeout(() => {
           beep();
@@ -55,17 +55,20 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         if (message.type == "count") {
           setUPrev(Date.now() + 1000);
         }
+      }
 
-        if (message.type == "snote") {
-          let now = Date.now();
-          if (!isFrist) {
-            sOffset = sOffset + (now - prev) / 20;
-          } else {
-            isFrist = false;
-          }
-          drawPoint(sOffset, 10);
-          prev = now;
+      if (message.type == "snote") {
+        setTimeout(() => {
+          beep(message.pitch);
+        }, msPerBeat);
+        let now = Date.now();
+        if (!isFrist) {
+          sOffset = sOffset + (now - prev) / 20;
+        } else {
+          isFrist = false;
         }
+        drawPoint(sOffset, 10);
+        prev = now;
       }
 
       if (message.type == "end") {
