@@ -50,7 +50,7 @@ with connect("ws://localhost:8888/chatsocket") as ws:
     )
     t = threading.Thread(target=handle_updates, args=[ws])
     t.start()
-    ws.send(json.dumps({"type": "start"}))
+    ws.send(json.dumps({"type": "start", "song": "default"}))
     sleep(5)
     play(ws)
     stop = True

@@ -58,7 +58,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     test_period = 1
     start_count = 0
     scores = {}
-    t0 = 0
+    t0 = None
     total_err = 0
     errs = list()
     id = None
@@ -125,8 +125,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             ids = [w.id for w in self.waiters if w.id]
             ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
         if type_ == "start":
-            
-            self.t0 = time.time() + 4
+            self.t0 = time.time() + 4 #assumes 60 bpm
             ChatSocketHandler.choices.append(message["song"])
             async def f():
                 ChatSocketHandler.start_count += 1
@@ -146,9 +145,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         await asyncio.sleep(1)
 
                     for i, delta in enumerate(dts):
-                        ChatSocketHandler.send_updates(
-                            json.dumps({"type": "snote", "pitch": pitches[i], "duration": dts[i]})
-                        )
+                        if pitches[i] != '--':
+                            ChatSocketHandler.send_updates(
+                                json.dumps({"type": "snote", "pitch": pitches[i], "duration": dts[i]})
+                            )
                         await asyncio.sleep(delta)
                         
                     await asyncio.sleep(1)
@@ -161,7 +161,10 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             asyncio.create_task(f())
         if type_ == "note":
             t1 = time.time()
-            err = self.test_period - (t1 - self.t0)
+            try:
+                err = self.test_period - (t1 - self.t0)
+            except:
+                err = 22
             self.errs.append(err)
             self.total_err += abs(err)
             self.t0 = t1
