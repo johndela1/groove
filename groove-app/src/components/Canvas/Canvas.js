@@ -17,7 +17,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [isWaiting, setIsWaiting] = React.useState(false);
   const [isInGame, setIsInGame] = React.useState(false);
   const [scores, setScores] = React.useState({});
-  const [countdown, setCountDown] = React.useState(5);
+  const [countdown, setCountDown] = React.useState(0);
   const [ws, setWebSocket] = React.useState(null);
   const [newGame, setNewGame] = React.useState(false);
   let sOffset = 0;
@@ -48,7 +48,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
 
       if (message.type == "count") {
         setIsInGame(true);
-        setCountDown((prev) => prev - 1);
+        setCountDown((prev) => prev + 1);
         setTimeout(() => {
           beep();
         }, msPerBeat);
@@ -58,7 +58,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       }
 
       if (message.type == "snote") {
-        setCountDown(0);
+        setCountDown(5);
         setTimeout(() => {
           beep(message.pitch, message.duration);
         }, msPerBeat);
@@ -107,7 +107,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     setUPrev(null);
     setScores({});
     setDelay(0);
-    setCountDown(5);
+    setCountDown(0);
     ref.current.getContext("2d").clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   };
 
@@ -124,9 +124,6 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   React.useEffect(() => {
     function keyDownHandler(e) {
       switch (e.key) {
-        case "n":
-          reset();
-          break;
         case " ":
           if (Object.keys(scores).length === 0) {
             note();
@@ -156,7 +153,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
 
   return (
     <div>
-      {isInGame && countdown > 0 && (
+      {isInGame && countdown < 5 && (
         <div className="overlay">
           <div className="overlay--countdown">{countdown}</div>
         </div>

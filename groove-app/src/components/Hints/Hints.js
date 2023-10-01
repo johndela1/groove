@@ -14,7 +14,7 @@ export default function Hints(props) {
         </div>
       ) : null}
       <div className="hints--instructions">
-        Guide: Press [x] to start, [n] to restart, [,] and [.] to choose song
+        Guide: Press [,] and [.] to choose song
       </div>
     </div>
   );
