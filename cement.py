@@ -57,7 +57,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     start_count = 0
     scores = {}
     t0 = None
-    print("inited", time.time())
     total_err = 0
     errs = list()
     id = None
@@ -141,7 +140,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                             json.dumps({"type": "count"})
                         )
                         await asyncio.sleep(1)
-                    print("start", time.time(), id(self))
                     self.t0 = time.time() - self.test_period
                     for i, delta in enumerate(dts):
                         if pitches[i] != '--':
@@ -162,7 +160,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             asyncio.create_task(f())
         if type_ == "note":
             t1 = time.time()
-            print(id(self), time.time())
             err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
             self.total_err += abs(err)

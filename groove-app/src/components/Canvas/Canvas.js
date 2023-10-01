@@ -19,6 +19,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [scores, setScores] = React.useState({});
   const [countdown, setCountDown] = React.useState(5);
   const [ws, setWebSocket] = React.useState(null);
+  const [newGame, setNewGame] = React.useState(false);
   let sOffset = 0;
   let uOffset = 0;
   const ref = React.useRef(null);
@@ -81,7 +82,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     return () => {
       websocket.close();
     };
-  }, []);
+  }, [newGame]);
 
   const drawPoint = (offset, vertical, color = "black") => {
     const canvas = ref.current;
@@ -96,11 +97,13 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       );
     }
   };
-
+  // after reset, close current socket, create a new socket and join and wait for next signal
   const reset = () => {
     ws.close();
+    setWebSocket(null);
     setIsInGame(false);
     setIsWaiting(false);
+    setNewGame((prev) => !prev);
     setUPrev(null);
     setScores({});
     setDelay(0);
