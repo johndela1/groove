@@ -14,6 +14,33 @@
   animation: note-inaccurate 3s;
 }
 
+.operations {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  button {
+    margin-right: 6px;
+  }
+}
+
+.overlay {
+  width: 1000px;
+  height: 300px;
+  background: rgba(131, 146, 164, 0.5);
+  border: solid 1px #c3c3c3;
+  position: absolute;
+  text-align: center;
+  margin-top: 5vh;
+  left: 50%;
+  transform: translate(-50%, 0%);
+
+  .overlay--countdown {
+    top: 50%;
+    transform: translate(0%, 50%);
+    font-size: 120px;
+    color: slategray;
+  }
+}
+
 @keyframes note-accurate {
   from {
     background-color: white;

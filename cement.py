@@ -76,11 +76,15 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         ChatSocketHandler.waiters.add(self)
 
     def on_close(self):
+        print("end")
         ChatSocketHandler.errs = list()
         ChatSocketHandler.start_count = 0
         ChatSocketHandler.choices = []
         ChatSocketHandler.waiters.remove(self)
-        del ChatSocketHandler.scores[self.id]
+        try:
+            del ChatSocketHandler.scores[self.id]
+        except KeyError:
+            pass
 
     def load_song(self, needle, file):
         for line in file:
