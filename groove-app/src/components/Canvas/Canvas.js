@@ -17,12 +17,10 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   const [isWaiting, setIsWaiting] = React.useState(false);
   const [isInGame, setIsInGame] = React.useState(false);
   const [scores, setScores] = React.useState({});
+  const [countdown, setCountDown] = React.useState(5);
   const [ws, setWebSocket] = React.useState(null);
-  const song = songs[selectedSong];
-  const tss = [];
   let sOffset = 0;
   let uOffset = 0;
-  const dts = deltas(song, msPerBeat);
   const ref = React.useRef(null);
   let isFrist = true;
   let prev = null;
@@ -49,6 +47,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
 
       if (message.type == "count") {
         setIsInGame(true);
+        setCountDown((prev) => prev - 1);
         setTimeout(() => {
           beep();
         }, msPerBeat);
@@ -58,8 +57,9 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       }
 
       if (message.type == "snote") {
+        setCountDown(0);
         setTimeout(() => {
-          beep(message.pitch);
+          beep(message.pitch, message.duration);
         }, msPerBeat);
         let now = Date.now();
         if (!isFrist) {
@@ -67,7 +67,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
         } else {
           isFrist = false;
         }
-        drawPoint(sOffset, 10);
+        drawPoint(sOffset, 10, "slategray");
         prev = now;
       }
 
@@ -81,18 +81,30 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     return () => {
       websocket.close();
     };
-  }, []);
+  }, [isInGame]);
 
-  const drawPoint = (offset, vertical) => {
+  const drawPoint = (offset, vertical, color = "black") => {
     const canvas = ref.current;
     if (canvas) {
       const cx = canvas.getContext("2d");
-      cx.fillRect(offset, vertical, 20, 40);
+      cx.fillStyle = color;
+      cx.fillRect(
+        offset > 1000 ? offset - 1000 * Math.floor(offset / 1000) : offset,
+        offset > 1000 ? vertical + 100 * Math.floor(offset / 1000) : vertical,
+        20,
+        40
+      );
     }
   };
 
   const reset = () => {
+    ws.close();
+    setIsInGame(false);
+    setIsWaiting(false);
+    setUPrev(null);
+    setScores({});
     setDelay(0);
+    setCountDown(5);
     ref.current.getContext("2d").clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   };
 
@@ -135,12 +147,17 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     );
     let now = Date.now();
     uOffset = uOffset + (now - uPrev) / 20;
-    drawPoint(uOffset, 50);
+    drawPoint(uOffset, 50, "skyblue");
     uPrev = now;
   };
 
   return (
     <div>
+      {isInGame && countdown > 0 && (
+        <div className="overlay">
+          <div className="overlay--countdown">{countdown}</div>
+        </div>
+      )}
       <canvas
         ref={ref}
         id="myCanvas"
@@ -156,12 +173,14 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
       >
         Your browser does not support the canvas element.
       </canvas>
-      {isReady && !isInGame && (
-        <button disabled={isWaiting} onClick={() => startGame()}>
-          Ready
-        </button>
-      )}
-      <button onClick={() => ws.close()}>close socket</button>
+      <div className="operations">
+        {isReady && !isInGame && (
+          <button disabled={isWaiting} onClick={() => startGame()}>
+            Ready
+          </button>
+        )}
+        <button onClick={() => reset()}>Reset</button>
+      </div>
       {scores &&
         Object.keys(scores).map((key, index) => (
           <p key={index}>
