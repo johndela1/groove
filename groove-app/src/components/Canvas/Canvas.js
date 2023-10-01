@@ -81,7 +81,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     return () => {
       websocket.close();
     };
-  }, [isInGame]);
+  }, []);
 
   const drawPoint = (offset, vertical, color = "black") => {
     const canvas = ref.current;

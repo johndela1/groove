@@ -21,8 +21,6 @@ def song_to_deltas(notes, bpm=60):
     bps = bpm/60
     for notes in bars:
         for i, note in enumerate(notes[::3]):
-            # if i == 0:
-            #     dts.append(0)
             dts.append(4/int(note))
     return dts
 
@@ -59,6 +57,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     start_count = 0
     scores = {}
     t0 = None
+    print("inited", time.time())
     total_err = 0
     errs = list()
     id = None
@@ -125,7 +124,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             ids = [w.id for w in self.waiters if w.id]
             ChatSocketHandler.send_updates(json.dumps({"type": "ready"}))
         if type_ == "start":
-            self.t0 = time.time() + 4 #assumes 60 bpm
+             #assumes 60 bpm
             ChatSocketHandler.choices.append(message["song"])
             async def f():
                 ChatSocketHandler.start_count += 1
@@ -137,15 +136,17 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                     
                     dts = song_to_deltas(song)
                     pitches = song_to_pitches(song)
-
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "count"})
                         )
                         await asyncio.sleep(1)
-
+                    print("start", time.time(), id(self))
+                    self.t0 = time.time() - self.test_period
                     for i, delta in enumerate(dts):
                         if pitches[i] != '--':
+                            if i > 0:
+                                self.test_period = dts[i-1]
                             ChatSocketHandler.send_updates(
                                 json.dumps({"type": "snote", "pitch": pitches[i], "duration": dts[i]})
                             )
@@ -161,10 +162,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             asyncio.create_task(f())
         if type_ == "note":
             t1 = time.time()
-            try:
-                err = self.test_period - (t1 - self.t0)
-            except:
-                err = 22
+            print(id(self), time.time())
+            err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
             self.total_err += abs(err)
             self.t0 = t1
