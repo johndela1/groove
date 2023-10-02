@@ -59,7 +59,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
     scores = {}
     t0 = None
     total_err = 0
-    errs = list()
     id = None
 
     def get_compression_options(self):
@@ -71,12 +70,11 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         return True
 
     def open(self):
-        print("open")
+        self.errs = list()
         ChatSocketHandler.waiters.add(self)
 
     def on_close(self):
         print("end")
-        ChatSocketHandler.errs = list()
         ChatSocketHandler.start_count = 0
         ChatSocketHandler.choices = []
         ChatSocketHandler.waiters.remove(self)
@@ -135,7 +133,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         song = await self.load_song(song_name, f)
                     dts = song_to_deltas(song)
                     pitches = song_to_pitches(song)
-                    self.t0 = time.time() - self.test_period + 4
+                    for w in self.waiters:
+                        w.t0 = time.time() - self.test_period + 4
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "count"})
