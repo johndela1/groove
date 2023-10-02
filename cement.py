@@ -6,6 +6,7 @@ import logging
 import time
 import json
 
+from aiofile import async_open
 import tornado
 from tornado import websocket
 from tornado.options import define, options
@@ -84,8 +85,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         except KeyError:
             pass
 
-    def load_song(self, needle, file):
-        for line in file:
+    async def load_song(self, needle, file):
+        async for line in file:
             haystack, song = line.split('|')
             if needle == haystack:
                 return song
@@ -130,9 +131,8 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 ids = [w.id for w in self.waiters if w.id]
                 if len(ids) == ChatSocketHandler.start_count:
                     song_name = ChatSocketHandler.choices[0]
-                    with open("songs", "r") as f:
-                        song = self.load_song(song_name, f)
-                    
+                    async with async_open("songs", "r") as f:
+                        song = await self.load_song(song_name, f)
                     dts = song_to_deltas(song)
                     pitches = song_to_pitches(song)
                     for _ in range(4):
