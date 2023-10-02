@@ -12,7 +12,13 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
-export default function Canvas({ songs, selectedSong, delay, setDelay }) {
+export default function Canvas({
+  songs,
+  selectedSong,
+  delay,
+  setDelay,
+  roomId,
+}) {
   const [isReady, setIsReady] = React.useState(false);
   const [isWaiting, setIsWaiting] = React.useState(false);
   const [isInGame, setIsInGame] = React.useState(false);
@@ -28,12 +34,15 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
   let [uPrev, setUPrev] = React.useState(null);
 
   React.useEffect(() => {
-    const websocket = new WebSocket("ws://localhost:8888/chatsocket");
+    const websocket = new WebSocket(
+      `ws://localhost:8888/chatsocket?roomId=${roomId}`
+    );
 
     websocket.onopen = function (event) {
       websocket.send(
         JSON.stringify({
           type: "join",
+          room_id: roomId,
           id: uuidv4(),
         })
       );
@@ -116,6 +125,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     ws.send(
       JSON.stringify({
         type: "start",
+        room_id: roomId,
         song: songs[selectedSong],
       })
     );
@@ -143,6 +153,7 @@ export default function Canvas({ songs, selectedSong, delay, setDelay }) {
     ws.send(
       JSON.stringify({
         type: "note",
+        room_id: roomId,
       })
     );
     let now = Date.now();
