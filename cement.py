@@ -135,12 +135,12 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         song = await self.load_song(song_name, f)
                     dts = song_to_deltas(song)
                     pitches = song_to_pitches(song)
+                    self.t0 = time.time() - self.test_period + 4
                     for _ in range(4):
                         ChatSocketHandler.send_updates(
                             json.dumps({"type": "count"})
                         )
                         await asyncio.sleep(1)
-                    self.t0 = time.time() - self.test_period
                     for i, delta in enumerate(dts):
                         if pitches[i] != '--':
                             if i > 0:
