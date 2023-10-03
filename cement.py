@@ -170,7 +170,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                     )
 
             asyncio.create_task(f())
-        if type_ == "note":
+        if type_ == "note" and self.t0 is not None:
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
             self.errs.append(err)
