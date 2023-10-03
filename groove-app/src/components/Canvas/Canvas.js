@@ -27,8 +27,8 @@ export default function Canvas({
   const [countdown, setCountDown] = React.useState(0);
   const [ws, setWebSocket] = React.useState(null);
   const [newGame, setNewGame] = React.useState(false);
-  let sOffset = 0;
-  let uOffset = 0;
+  let sOffset = 10;
+  let uOffset = 10;
   const ref = React.useRef(null);
   let isFrist = true;
   let prev = null;
