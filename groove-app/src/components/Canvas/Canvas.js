@@ -18,6 +18,7 @@ export default function Canvas({
   delay,
   setDelay,
   roomId,
+  name,
 }) {
   const [isReady, setIsReady] = React.useState(false);
   const [isWaiting, setIsWaiting] = React.useState(false);
@@ -43,7 +44,7 @@ export default function Canvas({
         JSON.stringify({
           type: "join",
           room_id: roomId,
-          id: uuidv4(),
+          id: name,
         })
       );
     };

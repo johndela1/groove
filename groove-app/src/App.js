@@ -10,8 +10,15 @@ const songs = res.res;
 export default function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const roomId = urlParams.get("roomId");
+  const [confirmName, setConfirmName] = React.useState("");
+  const [name, setName] = React.useState("");
   const [selectedSong, setSong] = React.useState(0);
   const [delay, setDelay] = React.useState(0);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setConfirmName(name);
+  };
 
   React.useEffect(() => {
     function keyDownHandler(e) {
@@ -38,14 +45,32 @@ export default function App() {
 
   return (
     <div className="App">
-      <Canvas
-        songs={songs}
-        selectedSong={selectedSong}
-        delay={delay}
-        setDelay={setDelay}
-        roomId={roomId}
-      />
-      <Hints delay={delay} song={songs[selectedSong]} />
+      {!confirmName && (
+        <form className="form--name" onSubmit={handleSubmit}>
+          <label>
+            Enter your name:
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <input type="submit" />
+        </form>
+      )}
+      {confirmName && (
+        <>
+          <Canvas
+            songs={songs}
+            selectedSong={selectedSong}
+            delay={delay}
+            setDelay={setDelay}
+            roomId={roomId}
+            name={name}
+          />
+          <Hints delay={delay} song={songs[selectedSong]} />
+        </>
+      )}
     </div>
   );
 }

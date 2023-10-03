@@ -28,6 +28,12 @@
   color: #61dafb;
 }
 
+.form--name {
+  display: block;
+  top: 100px;
+  position: relative;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
