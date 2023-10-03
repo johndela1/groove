@@ -14,17 +14,20 @@ from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 
+
 def grouper(iterable, n):
-    return zip(*([iter(iterable)]*n))
+    return zip(*([iter(iterable)] * n))
+
 
 def song_to_deltas(notes, bpm=60):
     bars = notes.split()
     dts = []
-    bps = bpm/60
+    bps = bpm / 60
     for notes in bars:
         for i, note in enumerate(notes[::3]):
-            dts.append(4/int(note))
+            dts.append(4 / int(note))
     return dts
+
 
 def song_to_pitches(notes):
     bars = notes.split()
@@ -79,7 +82,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     def on_close(self):
         print("end")
-        
+
         ChatSocketHandler.choices = []
         room_id = self.request.query_arguments["roomId"][0].decode()
         ChatSocketHandler.start_count[room_id] = 0
@@ -91,10 +94,9 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     async def load_song(self, needle, file):
         async for line in file:
-            haystack, song = line.split('|')
+            haystack, song = line.split("|")
             if needle == haystack:
                 return song
-
 
     @classmethod
     def update_history(cls, chat):
@@ -116,8 +118,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             except:
                 logging.error("Error sending message", exc_info=True)
 
-
-
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
         type_ = message["type"]
@@ -128,13 +128,16 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 ChatSocketHandler.rooms[room_id]["players"].append(self.id)
             except KeyError:
                 ChatSocketHandler.rooms[room_id] = {
-                   "players": [self.id],
+                    "players": [self.id],
                 }
             ChatSocketHandler.send_updates(message, room_id)
-            ChatSocketHandler.send_updates(json.dumps({"type": "ready"}), room_id)
+            ChatSocketHandler.send_updates(
+                json.dumps({"type": "ready"}), room_id
+            )
         if type_ == "start":
-             #assumes 60 bpm
+            # assumes 60 bpm
             ChatSocketHandler.choices.append(message["song"])
+
             async def f():
                 ChatSocketHandler.start_count[room_id] += 1
                 ids = [w.id for w in self.waiters[room_id] if w.id]
@@ -152,21 +155,32 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         )
                         await asyncio.sleep(1)
                     for i, delta in enumerate(dts):
-                        if pitches[i] != '--':
+                        if pitches[i] != "--":
                             if i > 0:
-                                self.test_period = dts[i-1]
+                                self.test_period = dts[i - 1]
                             ChatSocketHandler.send_updates(
-                                json.dumps({"type": "snote", "pitch": pitches[i], "duration": dts[i]}),
-                                room_id
+                                json.dumps(
+                                    {
+                                        "type": "snote",
+                                        "pitch": pitches[i],
+                                        "duration": dts[i],
+                                    }
+                                ),
+                                room_id,
                             )
                         await asyncio.sleep(delta)
-                        
+
                     await asyncio.sleep(1)
                     for w in self.waiters[room_id]:
                         ChatSocketHandler.scores[room_id][w.id] = w.total_err
                     ChatSocketHandler.send_updates(
-                        json.dumps({"type": "end", "scores": ChatSocketHandler.scores[room_id]}),
-                        room_id
+                        json.dumps(
+                            {
+                                "type": "end",
+                                "scores": ChatSocketHandler.scores[room_id],
+                            }
+                        ),
+                        room_id,
                     )
 
             asyncio.create_task(f())
@@ -184,25 +198,28 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                         "score": self.total_err,
                     }
                 ),
-                room_id
+                room_id,
             )
-            logging.info("got note %s, %s %f %f" % (message, self.id, err, self.total_err))
+            logging.info(
+                "got note %s, %s %f %f"
+                % (message, self.id, err, self.total_err)
+            )
 
 
 class SongsHandler(tornado.web.RequestHandler):
-
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 
     def get(self):
         res = []
         with open("songs", "r") as f:
             for line in f:
-                name = line.split('|')[0]
+                name = line.split("|")[0]
                 res.append(name)
         import json
+
         return self.write(json.dumps(dict(res=res)))
 
 
