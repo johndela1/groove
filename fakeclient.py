@@ -6,56 +6,57 @@ import uuid
 import json
 
 import time
-from time import sleep
 
-from websockets.sync.client import connect
+from websockets.client import connect
 from websockets.exceptions import ConnectionClosedOK
 
 TEST_PERIOD = 1
-periods = [1,0.5,0.5,1,1]
+periods = [1,1,1,1]
 
 
-def play(ws):
-    for _ in range(5):
+async def play(ws):
+    for i in range(4):
         print("play note")
-        ws.send(
+        await ws.send(
             json.dumps(
                 {
                     "type": "note",
+                    "room_id": "1",
                 }
             )
         )
-        sleep(periods[_])
+        await asyncio.sleep(periods[i])
 
 
-def handle_updates(ws):
+async def handle_updates(ws):
     while True:
-        global stop
-        if stop:
-            print("stop handle_updates")
-            break
         try:
-            print("got update", ws.recv())
+            print("got update", id(ws), await ws.recv())
         except ConnectionClosedOK:
             print("closed")
 
 
-stop = False
-with connect("ws://localhost:8888/chatsocket") as ws:
-    ws.send(
+async def join(ws):
+    await ws.send(
         json.dumps(
             {
                 "type": "join",
                 "id": str(uuid.uuid4())[:4],
+                "room_id": "1", #str(uuid.uuid4())[:4],
             }
         )
     )
-    t = threading.Thread(target=handle_updates, args=[ws])
-    t.start()
-    ws.send(json.dumps({"type": "start", "song": "default2"}))
-    print("sent", time.time())
-    sleep(4)
-    play(ws)
-    stop = True
-    ws.close()
-    t.join()
+async def play2(ws):
+    await ws.send(json.dumps({"type": "start", "song": "default", "room_id": "1"}))
+    await asyncio.sleep(4)
+    await play(ws)
+
+
+async def main():
+        wss = [await connect("ws://localhost:8888/chatsocket?roomId=1") for _ in range(100)]
+        handlers =[asyncio.create_task(handle_updates(ws)) for ws in wss]
+
+        await asyncio.gather(*[asyncio.create_task(join(ws)) for ws in wss])
+        await asyncio.gather(*[asyncio.create_task(play2(ws)) for ws in wss])
+        await asyncio.gather(*handlers)
+asyncio.run(main())
