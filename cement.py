@@ -54,17 +54,15 @@ class Application(tornado.web.Application):
 
 
 class ChatSocketHandler(websocket.WebSocketHandler):
-    rooms = dict()
     waiters = defaultdict(set)
-    history = []
     choices = []
-    history_size = 200
     test_period = 1
     start_count = defaultdict(int)
     scores = defaultdict(dict)
-    t0 = None
-    total_err = 0
-    id = None
+
+    def __init__(self, *args):
+        self.total_err = 0
+        super().__init__(*args)
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -76,19 +74,17 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     def open(self):
         self.errs = list()
-        print("open")
-        room_id = self.request.query_arguments["roomId"][0].decode()
-        ChatSocketHandler.waiters[room_id].add(self)
+        self.room_id = self.request.query_arguments["roomId"][0].decode()
+        ChatSocketHandler.waiters[self.room_id].add(self)
 
     def on_close(self):
         print("end")
 
         ChatSocketHandler.choices = []
-        room_id = self.request.query_arguments["roomId"][0].decode()
-        ChatSocketHandler.start_count[room_id] = 0
-        ChatSocketHandler.waiters[room_id].remove(self)
+        ChatSocketHandler.start_count[self.room_id] = 0
+        ChatSocketHandler.waiters[self.room_id].remove(self)
         try:
-            del ChatSocketHandler.scores[room_id]
+            del ChatSocketHandler.scores[self.room_id]
         except KeyError:
             pass
 
@@ -97,12 +93,6 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             haystack, song = line.split("|")
             if needle == haystack:
                 return song
-
-    @classmethod
-    def update_history(cls, chat):
-        cls.history.append(chat)
-        if len(cls.history) > cls.history_size:
-            cls.history = cls.history[-cls.history_size :]
 
     @classmethod
     def send_updates(cls, message, room_id):
@@ -118,18 +108,58 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             except:
                 logging.error("Error sending message", exc_info=True)
 
+    async def play(self):
+        room_id = self.room_id
+        ChatSocketHandler.start_count[room_id] += 1
+        ids = [w.id for w in self.waiters[room_id] if w.id]
+        if len(ids) == ChatSocketHandler.start_count[room_id]:
+            song_name = ChatSocketHandler.choices[0]
+            async with async_open("songs", "r") as f:
+                song = await self.load_song(song_name, f)
+            dts = song_to_deltas(song)
+            pitches = song_to_pitches(song)
+            self.test_period = dts[0]
+            for w in self.waiters[room_id]:
+                w.t0 = time.time() - self.test_period + 4
+            for _ in range(4):
+                ChatSocketHandler.send_updates(
+                    json.dumps({"type": "count"}), room_id
+                )
+                await asyncio.sleep(1)
+            for i, delta in enumerate(dts):
+                if pitches[i] != "--":
+                    if i > 0:
+                        self.test_period = dts[i - 1]
+                    ChatSocketHandler.send_updates(
+                        json.dumps(
+                            {
+                                "type": "snote",
+                                "pitch": pitches[i],
+                                "duration": dts[i],
+                            }
+                        ),
+                        room_id,
+                    )
+                await asyncio.sleep(delta)
+            await asyncio.sleep(1)
+            for w in self.waiters[room_id]:
+                ChatSocketHandler.scores[room_id][w.id] = w.total_err
+            ChatSocketHandler.send_updates(
+                json.dumps(
+                    {
+                        "type": "end",
+                        "scores": ChatSocketHandler.scores[room_id],
+                    }
+                ),
+                room_id,
+            )
+
     async def on_message(self, message):
         message = tornado.escape.json_decode(message)
         type_ = message["type"]
         room_id = message["room_id"]
         if type_ == "join":
             self.id = message["id"]
-            try:
-                ChatSocketHandler.rooms[room_id]["players"].append(self.id)
-            except KeyError:
-                ChatSocketHandler.rooms[room_id] = {
-                    "players": [self.id],
-                }
             ChatSocketHandler.send_updates(message, room_id)
             ChatSocketHandler.send_updates(
                 json.dumps({"type": "ready"}), room_id
@@ -137,53 +167,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         if type_ == "start":
             # assumes 60 bpm
             ChatSocketHandler.choices.append(message["song"])
-
-            async def f():
-                ChatSocketHandler.start_count[room_id] += 1
-                ids = [w.id for w in self.waiters[room_id] if w.id]
-                if len(ids) == ChatSocketHandler.start_count[room_id]:
-                    song_name = ChatSocketHandler.choices[0]
-                    async with async_open("songs", "r") as f:
-                        song = await self.load_song(song_name, f)
-                    dts = song_to_deltas(song)
-                    pitches = song_to_pitches(song)
-                    for w in self.waiters[room_id]:
-                        w.t0 = time.time() - self.test_period + 4
-                    for _ in range(4):
-                        ChatSocketHandler.send_updates(
-                            json.dumps({"type": "count"}), room_id
-                        )
-                        await asyncio.sleep(1)
-                    for i, delta in enumerate(dts):
-                        if pitches[i] != "--":
-                            if i > 0:
-                                self.test_period = dts[i - 1]
-                            ChatSocketHandler.send_updates(
-                                json.dumps(
-                                    {
-                                        "type": "snote",
-                                        "pitch": pitches[i],
-                                        "duration": dts[i],
-                                    }
-                                ),
-                                room_id,
-                            )
-                        await asyncio.sleep(delta)
-
-                    await asyncio.sleep(1)
-                    for w in self.waiters[room_id]:
-                        ChatSocketHandler.scores[room_id][w.id] = w.total_err
-                    ChatSocketHandler.send_updates(
-                        json.dumps(
-                            {
-                                "type": "end",
-                                "scores": ChatSocketHandler.scores[room_id],
-                            }
-                        ),
-                        room_id,
-                    )
-
-            asyncio.create_task(f())
+            asyncio.create_task(self.play())
         if type_ == "note" and self.t0 is not None:
             t1 = time.time()
             err = self.test_period - (t1 - self.t0)
@@ -194,14 +178,14 @@ class ChatSocketHandler(websocket.WebSocketHandler):
                 json.dumps(
                     {
                         "type": "score",
-                        "errs": self.errs,
-                        "score": self.total_err,
+                        "errs": [round(err, 4) for err in self.errs],
+                        "score": round(self.total_err, 4),
                     }
                 ),
                 room_id,
             )
             logging.info(
-                "got note %s, %s %f %f"
+                "got note %s, %s %.4f %.4f"
                 % (message, self.id, err, self.total_err)
             )
 
