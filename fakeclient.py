@@ -53,7 +53,7 @@ async def play2(ws):
 
 
 async def main():
-        wss = [await connect("ws://localhost:8888/chatsocket?roomId=1") for _ in range(100)]
+        wss = [await connect("ws://localhost:8888/chatsocket?roomId=1") for _ in range(1)]
         handlers =[asyncio.create_task(handle_updates(ws)) for ws in wss]
 
         await asyncio.gather(*[asyncio.create_task(join(ws)) for ws in wss])
