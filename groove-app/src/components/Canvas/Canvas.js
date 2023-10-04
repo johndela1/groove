@@ -44,6 +44,7 @@ export default function Canvas({
   const [countdown, setCountDown] = React.useState(0);
   const [ws, setWebSocket] = React.useState(null);
   const [newGame, setNewGame] = React.useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
   let sOffset = 10;
   let uOffset = 10;
   const ref = React.useRef(null);
@@ -71,6 +72,10 @@ export default function Canvas({
 
       if (message.type == "ready") {
         setIsReady(true);
+      }
+
+      if (message.type == "decision") {
+        info(message.name, message.chosen_by);
       }
 
       if (message.type == "count") {
@@ -117,6 +122,10 @@ export default function Canvas({
       websocket.close();
     };
   }, [newGame]);
+
+  const info = (name, chosenBy) => {
+    messageApi.info(`Currently playing ${name} chosen by ${chosenBy}`);
+  };
 
   const drawPoint = (offset, vertical, color = "black") => {
     const canvas = ref.current;
@@ -189,6 +198,7 @@ export default function Canvas({
 
   return (
     <div>
+      {contextHolder}
       {isInGame && countdown < 5 && (
         <div className="overlay">
           <div className="overlay--countdown">{countdown}</div>

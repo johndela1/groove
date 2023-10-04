@@ -4,6 +4,7 @@
 import asyncio
 import json
 import logging
+import random
 import time
 from collections import defaultdict
 
@@ -55,7 +56,7 @@ class Application(tornado.web.Application):
 
 class ChatSocketHandler(websocket.WebSocketHandler):
     waiters = defaultdict(set)
-    choices = []
+    choices = defaultdict(list)
     test_period = 1
     start_count = defaultdict(int)
     scores = defaultdict(dict)
@@ -79,12 +80,12 @@ class ChatSocketHandler(websocket.WebSocketHandler):
 
     def on_close(self):
         print("end")
-
-        ChatSocketHandler.choices = []
-        ChatSocketHandler.start_count[self.room_id] = 0
-        ChatSocketHandler.waiters[self.room_id].remove(self)
+        room_id = self.room_id
+        ChatSocketHandler.choices[room_id] = []
+        ChatSocketHandler.start_count[room_id] = 0
+        ChatSocketHandler.waiters[room_id].remove(self)
         try:
-            del ChatSocketHandler.scores[self.room_id]
+            del ChatSocketHandler.scores[room_id]
         except KeyError:
             pass
 
@@ -113,9 +114,12 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         ChatSocketHandler.start_count[room_id] += 1
         ids = [w.id for w in self.waiters[room_id] if w.id]
         if len(ids) == ChatSocketHandler.start_count[room_id]:
-            song_name = ChatSocketHandler.choices[0]
+            song_name = random.choice(ChatSocketHandler.choices[room_id])
             async with async_open("songs", "r") as f:
                 song = await self.load_song(song_name, f)
+            ChatSocketHandler.send_updates(
+                json.dumps({"type": "decision", "name": song_name, "chosen_by": self.id}), room_id
+            )
             dts = song_to_deltas(song)
             pitches = song_to_pitches(song)
             self.test_period = dts[0]
@@ -166,7 +170,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
             )
         if type_ == "start":
             # assumes 60 bpm
-            ChatSocketHandler.choices.append(message["song"])
+            ChatSocketHandler.choices[room_id].append(message["song"])
             asyncio.create_task(self.play())
         if type_ == "note" and self.t0 is not None:
             t1 = time.time()
