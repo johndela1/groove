@@ -1,7 +1,7 @@
 import React from "react";
-import { v4 as uuidv4 } from "uuid";
-import { beep, deltas } from "./helpers";
+import { beep } from "./helpers";
 import "./Canvas.styles.scss";
+import { Button, message, Space, Table, ConfigProvider } from "antd/lib";
 
 const bpm = 240;
 const SECS_IN_MIN = 60;
@@ -12,6 +12,23 @@ const ACCURACY_STANDARD = 60; // Acceptable accuracy
 
 const average = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
+const columns = [
+  {
+    title: "Ranking",
+    dataIndex: "ranking",
+    key: "ranking",
+  },
+  {
+    title: "Name",
+    dataIndex: "name",
+    key: "name",
+  },
+  {
+    title: "Score",
+    dataIndex: "score",
+    key: "score",
+  },
+];
 export default function Canvas({
   songs,
   selectedSong,
@@ -83,7 +100,14 @@ export default function Canvas({
       }
 
       if (message.type == "end") {
-        setScores(message.scores);
+        const data = Object.entries(message.scores).map(([name, score]) => ({
+          name,
+          score,
+        }));
+        data.sort((a, b) => a.score - b.score);
+        data.map((d, index) => (d.ranking = index + 1));
+        console.log(data);
+        setScores(data);
       }
     };
 
@@ -187,19 +211,35 @@ export default function Canvas({
       </canvas>
       <div className="operations">
         {isReady && !isInGame && (
-          <button disabled={isWaiting} onClick={() => startGame()}>
-            Ready
-          </button>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#3C4B5A",
+              },
+            }}
+          >
+            <Button
+              type="primary"
+              disabled={isWaiting}
+              onClick={() => startGame()}
+            >
+              Ready
+            </Button>
+          </ConfigProvider>
         )}
-        <button onClick={() => reset()}>Reset</button>
+        <Button onClick={() => reset()}>Reset</Button>
       </div>
-      {scores &&
-        Object.keys(scores).map((key, index) => (
-          <p key={index}>
-            {" "}
-            {key} has score: {scores[key]}
-          </p>
-        ))}
+      {scores[0] && (
+        <Space size="small">
+          <Table
+            size="small"
+            pagination={false}
+            showHeader={true}
+            columns={columns}
+            dataSource={scores}
+          />
+        </Space>
+      )}
     </div>
   );
 }

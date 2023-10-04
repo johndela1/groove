@@ -2,6 +2,7 @@
   border: solid 1px #c3c3c3;
   margin: 10px;
   margin-top: 5vh;
+  background: white;
 }
 
 .accurate {
@@ -38,6 +39,37 @@
     transform: translate(0%, 50%);
     font-size: 120px;
     color: slategray;
+  }
+}
+
+.ant-table-row {
+  background: rgba(49, 63, 78, 0.9);
+  color: white;
+  .ant-table-cell {
+    border: skyblue;
+  }
+}
+
+.ant-table-thead {
+  .ant-table-cell {
+    background: rgba(49, 63, 78, 0.9) !important;
+    color: white !important;
+  }
+}
+
+.ant-table-cell-row-hover {
+  background: rgba(49, 63, 78, 0.9) !important;
+}
+
+.ant-table-row:last-child {
+  .ant-table-cell {
+    border: none;
+  }
+}
+
+.ant-table-content {
+  table {
+    border-radius: 0 !important;
   }
 }
 

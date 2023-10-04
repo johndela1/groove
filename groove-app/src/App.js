@@ -2,6 +2,7 @@ import React from "react";
 import Canvas from "./components/Canvas";
 import Hints from "./components/Hints";
 import "./App.css";
+import { Button, Space, Input, ConfigProvider } from "antd/lib";
 
 const response = await fetch("http://localhost:8888/songs");
 const res = await response.json();
@@ -45,32 +46,49 @@ export default function App() {
 
   return (
     <div className="App">
-      {!confirmName && (
-        <form className="form--name" onSubmit={handleSubmit}>
-          <label>
-            Enter your name:
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+      <section>
+        <div className="air air1"></div>
+        <div className="air air2"></div>
+        {!confirmName && (
+          <div className="form--name">
+            <Space direction="vertical">
+              <Space direction="horizontal">
+                <Input
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      colorPrimary: "#3C4B5A",
+                    },
+                  }}
+                >
+                  <Button type="primary" onClick={(e) => handleSubmit(e)}>
+                    submit
+                  </Button>
+                </ConfigProvider>
+              </Space>
+            </Space>
+          </div>
+        )}
+        {confirmName && (
+          <>
+            <Canvas
+              songs={songs}
+              selectedSong={selectedSong}
+              delay={delay}
+              setDelay={setDelay}
+              roomId={roomId}
+              name={name}
             />
-          </label>
-          <input type="submit" />
-        </form>
-      )}
-      {confirmName && (
-        <>
-          <Canvas
-            songs={songs}
-            selectedSong={selectedSong}
-            delay={delay}
-            setDelay={setDelay}
-            roomId={roomId}
-            name={name}
-          />
-          <Hints delay={delay} song={songs[selectedSong]} />
-        </>
-      )}
+            <Hints delay={delay} song={songs[selectedSong]} />
+          </>
+        )}
+        <div className="air air3"></div>
+        <div className="air air4"></div>
+      </section>
     </div>
   );
 }
