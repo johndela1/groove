@@ -82,7 +82,7 @@ class ChatSocketHandler(websocket.WebSocketHandler):
         print("end")
         room_id = self.room_id
         ChatSocketHandler.choices[room_id] = []
-        ChatSocketHandler.start_count[room_id] = 0
+        ChatSocketHandler.start_count[room_id] -= 1
         ChatSocketHandler.waiters[room_id].remove(self)
         try:
             del ChatSocketHandler.scores[room_id]
